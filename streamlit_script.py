@@ -4,8 +4,7 @@ import pandas as pd
 import numpy as np
 from streamlit_extras.switch_page_button import switch_page
 
-# import dataframes from jupyter notebook
-# should add cache here as only need to import once
+# import dataframes exported from jupyter notebook
 @st.cache_data
 def load_dfs():
     df = pd.read_csv('df.csv', header = [0, 1], index_col = 0) # our cleaned data
@@ -13,6 +12,7 @@ def load_dfs():
     return df, user_input_vars
 
 df, user_input_vars = load_dfs()
+st.session_state.df = df # assign to session state to pass to map page
 
 # function to pick n random elements of each source from user_input_vars
 def random_vars(df, n):
