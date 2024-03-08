@@ -33,8 +33,15 @@ if 'user_options' not in st.session_state:
 st.title('Select options that resonate with you from the list below:')
 col_list = st.columns(len(st.session_state.user_options))
 
+user_input_vector = np.zeros(df.shape[1]) # initialize vector
+
 for idx, source in enumerate(st.session_state.user_options.keys()): # iterate through dict
     with col_list[idx]: # place in column
         st.subheader(f'{source.capitalize()}:')
         for index, row in st.session_state.user_options[source].iterrows(): # iterate through df rows
-            st.checkbox(label = row['Element Name'], key = row['Element ID']) # pull out label, use ID as key
+            selected = st.checkbox(label = row['Element Name']) # pull out label, use ID as key
+            if selected:
+                vector_index = df.columns.get_loc(row['Element ID']).start # multiheader indexing returns slice with starting value denoting 'IM' col index 
+                user_input_vector[vector_index] = 1 # set value to 1 to create vector similarity analysis
+
+st.write([i for i, value in enumerate(user_input_vector) if value == 1])
