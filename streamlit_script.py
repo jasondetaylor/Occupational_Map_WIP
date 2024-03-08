@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from streamlit_extras.switch_page_button import switch_page
 
 # import dataframes from jupyter notebook
 # should add cache here as only need to import once
@@ -45,3 +46,8 @@ for idx, source in enumerate(st.session_state.user_options.keys()): # iterate th
                 user_input_vector[vector_index] = 1 # set value to 1 to create vector similarity analysis
 
 st.write([i for i, value in enumerate(user_input_vector) if value == 1])
+
+search_button = st.button('Go')
+if search_button:
+    switch_page('map')
+
