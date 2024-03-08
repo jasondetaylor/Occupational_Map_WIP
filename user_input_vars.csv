@@ -1,4 +1,37 @@
 Source,Element ID,Scale ID,Element Name
+knowledge,2.C.1.a,IM,Administration and Management
+knowledge,2.C.1.b,IM,Administrative
+knowledge,2.C.1.c,IM,Economics and Accounting
+knowledge,2.C.1.d,IM,Sales and Marketing
+knowledge,2.C.1.e,IM,Customer and Personal Service
+knowledge,2.C.1.f,IM,Personnel and Human Resources
+knowledge,2.C.2.a,IM,Production and Processing
+knowledge,2.C.2.b,IM,Food Production
+knowledge,2.C.3.a,IM,Computers and Electronics
+knowledge,2.C.3.b,IM,Engineering and Technology
+knowledge,2.C.3.c,IM,Design
+knowledge,2.C.3.d,IM,Building and Construction
+knowledge,2.C.3.e,IM,Mechanical
+knowledge,2.C.4.a,IM,Mathematics
+knowledge,2.C.4.b,IM,Physics
+knowledge,2.C.4.c,IM,Chemistry
+knowledge,2.C.4.d,IM,Biology
+knowledge,2.C.4.e,IM,Psychology
+knowledge,2.C.4.f,IM,Sociology and Anthropology
+knowledge,2.C.4.g,IM,Geography
+knowledge,2.C.5.a,IM,Medicine and Dentistry
+knowledge,2.C.5.b,IM,Therapy and Counseling
+knowledge,2.C.6,IM,Education and Training
+knowledge,2.C.7.a,IM,English Language
+knowledge,2.C.7.b,IM,Foreign Language
+knowledge,2.C.7.c,IM,Fine Arts
+knowledge,2.C.7.d,IM,History and Archeology
+knowledge,2.C.7.e,IM,Philosophy and Theology
+knowledge,2.C.8.a,IM,Public Safety and Security
+knowledge,2.C.8.b,IM,Law and Government
+knowledge,2.C.9.a,IM,Telecommunications
+knowledge,2.C.9.b,IM,Communications and Media
+knowledge,2.C.10,IM,Transportation
 skills,2.A.1.a,IM,Reading Comprehension
 skills,2.A.1.b,IM,Active Listening
 skills,2.A.1.c,IM,Writing
