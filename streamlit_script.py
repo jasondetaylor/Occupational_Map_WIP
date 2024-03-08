@@ -47,6 +47,8 @@ for idx, source in enumerate(st.session_state.user_options.keys()): # iterate th
 
 st.write([i for i, value in enumerate(user_input_vector) if value == 1])
 
+st.session_state.user_input_vector = user_input_vector # assign to session state to pass varaible to map page
+
 search_button = st.button('Go')
 if search_button:
     switch_page('map')
