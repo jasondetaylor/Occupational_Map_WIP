@@ -10,6 +10,9 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import NearestNeighbors
 
+# use full page width
+st.set_page_config(layout = "wide")
+
 # access variables from main page
 df = st.session_state.df
 user_input_vector = st.session_state.user_input_vector
@@ -74,28 +77,39 @@ occupation_data.set_index('O*NET-SOC Code', inplace = True) # set code as index 
 pca_df = pca_df.join(occupation_data)
 
 #-----------------------  WEBPAGE CONFIGURATION  -----------------------#
-# 1. PAGE TITLE
+# 1. GENERAL
+# page title
 st.write('Map')
 
-# 2. DISPLAY SCATTER PLOT
-fig = go.Figure()
-# base plot
-fig.add_trace(go.Scatter(x = pca_df['PCA_1'], 
-                         y = pca_df['PCA_2'], 
-                         mode = 'text',
-                         text = pca_df['Title'],
-                         textposition = 'middle center',
-                         textfont = dict(size = 16)))
+# column config for plot and occupation desciption
+col_list = st.columns(2)
 
-# remove plot features
-fig.update_layout(xaxis = dict(showline = False,
-                               zeroline = False,
-                               showgrid = False,
-                               showticklabels = False),
-                  yaxis = dict(showline = False,
-                               zeroline = False,
-                               showgrid = False,
-                               showticklabels = False))
+# 2. DISPLAY SCATTER PLOT 
+with col_list[0]:
+    fig = go.Figure()
+    # base plot
+    fig.add_trace(go.Scatter(x = pca_df['PCA_1'], 
+                             y = pca_df['PCA_2'], 
+                             mode = 'text',
+                             text = pca_df['Title'],
+                             textposition = 'middle center',
+                             textfont = dict(size = 16)))
 
-# display
-st.plotly_chart(fig)
+    # remove plot features
+    fig.update_layout(xaxis = dict(showline = False,
+                                   zeroline = False,
+                                   showgrid = False,
+                                   showticklabels = False),
+                      yaxis = dict(showline = False,
+                                   zeroline = False,
+                                   showgrid = False,
+                                   showticklabels = False))
+
+    # display
+    st.plotly_chart(fig)
+
+# 3. DISPLAY OCCUPATION DETAILS
+with col_list[1]:
+    occupation = pca_df.iloc[0] # first row is most similar match
+    st.subheader(f"{occupation['Title']}") # display occupation title
+    st.write(f"{occupation['Description']}") # display occupation desc
