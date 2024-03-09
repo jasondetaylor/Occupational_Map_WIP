@@ -19,8 +19,9 @@ st.session_state.df = df # assign to session state to pass to map page
 #-------------------------  DATA MANIPULATION  -------------------------#
 # function to pick n random elements of each source from user_input_vars
 def random_vars(df, n):
-    '''takes in a dataframe and specified number of options, returns a dictionary containing df's of n number of metrics. 
-    1 dict entry per metric group as governed by source col'''
+    '''takes in a dataframe and specified number of options, returns a 
+    dictionary containing df's of n number of metrics. 1 dict entry per 
+    metric group as governed by source col'''
     
     random_vars_dict = {} # empty dict to store indexes for each source
     for source in df['Source'].unique(): # iterate through each metric group via 'source' col
@@ -33,8 +34,8 @@ def random_vars(df, n):
 if 'user_options' not in st.session_state:
     st.session_state.user_options = random_vars(user_input_vars, 10)
 
-#--------------------------  STREAMLIT APP  --------------------------#
-# pgae title
+#-----------------------  WEBPAGE CONFIGURATION  -----------------------#
+# page title
 st.title('Select options that resonate with you from the list below:')
 
 # initialize variables
