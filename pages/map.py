@@ -3,7 +3,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import seaborn as sns
+import plotly.graph_objs as go
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
@@ -70,13 +70,32 @@ def load_occupation():
 occupation_data = load_occupation()
 occupation_data.set_index('O*NET-SOC Code', inplace = True) # set code as index to match pca_df to make merging easier
 
-# join df's based on codes
+# join df's based on codes (indexes)
 pca_df = pca_df.join(occupation_data)
 
 #-----------------------  WEBPAGE CONFIGURATION  -----------------------#
-# page title
+# 1. PAGE TITLE
 st.write('Map')
 
-# display scatter plot
-scatter = sns.scatterplot(data = pca_df, x = 'PCA_1', y = 'PCA_2')
-st.pyplot(scatter.figure)
+# 2. DISPLAY SCATTER PLOT
+fig = go.Figure()
+# base plot
+fig.add_trace(go.Scatter(x = pca_df['PCA_1'], 
+                         y = pca_df['PCA_2'], 
+                         mode = 'text',
+                         text = pca_df['Title'],
+                         textposition = 'middle center',
+                         textfont = dict(size = 16)))
+
+# remove plot features
+fig.update_layout(xaxis = dict(showline = False,
+                               zeroline = False,
+                               showgrid = False,
+                               showticklabels = False),
+                  yaxis = dict(showline = False,
+                               zeroline = False,
+                               showgrid = False,
+                               showticklabels = False))
+
+# display
+st.plotly_chart(fig)
