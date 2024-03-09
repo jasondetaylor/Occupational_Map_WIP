@@ -1,22 +1,22 @@
+#-------------------------------  SETUP  -------------------------------#
 # import libraries
 import streamlit as st
 import pandas as pd
 import numpy as np
 import seaborn as sns
-#import matplotlib.pyplot as plt
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import NearestNeighbors
 
-st.write('Map')
-
 # access variables from main page
 df = st.session_state.df
-user_input_vector = st.session_state.user_input_vector # access variable from other page
+user_input_vector = st.session_state.user_input_vector
 
-# reshape use_input to be 2d to match our df
+#-----------------------------  MODELING  ------------------------------#
+# 1. FIND BEST MATCHES BASED ON CHECKBOX DATA
+# reshape user input to be 2d to match our df
 user_input_reshaped = user_input_vector.reshape(1, -1)
 
 # calculate similarities
@@ -26,14 +26,13 @@ similarities = cosine_similarity(user_input_reshaped, df)
 similarities_sorted = np.argsort(similarities).flatten() # sort indexes from most to least similar
 best_match_id = similarities_sorted[0]
 
-# Find closest matches to best match
+# 2. FIND CLOSEST MATCHES TO BEST MATCH
 n = 30 # number of points to display on plot
 
 # option 1: based on similarity to user input vector
 most_similar_indexes = similarities_sorted[:n]
 
-# Option 2:
-
+# Option 2: based on distances using KNN
 # scale
 scaler = RobustScaler()
 df_scaled = scaler.fit_transform(df)
@@ -53,7 +52,7 @@ distances, nearest_indexes = knn.kneighbors(best_match_row)
 #most_similar_data = df.iloc[most_similar_indexes.flatten()] # option 1
 most_similar_data = df.iloc[nearest_indexes.flatten()] # option 2
 
-# apply PCA
+# 3. APPLY PCA
 # dimensionality reduction
 pca = PCA(n_components = 2)
 reduced_data = pca.fit_transform(most_similar_data)
@@ -61,6 +60,7 @@ reduced_data = pca.fit_transform(most_similar_data)
 # convert back to dataframe
 pca_df = pd.DataFrame(data = reduced_data, columns = ['PCA_1', 'PCA_2'], index = most_similar_data.index)
 
+# 4. MERGE WITH OCCUPATION DATA TO RETRIEVE TITLES AND DESCRIPTIONS
 # read in occupation data
 @st.cache_data
 def load_occupation():
@@ -73,5 +73,10 @@ occupation_data.set_index('O*NET-SOC Code', inplace = True) # set code as index 
 # join df's based on codes
 pca_df = pca_df.join(occupation_data)
 
+#-----------------------  WEBPAGE CONFIGURATION  -----------------------#
+# page title
+st.write('Map')
+
+# display scatter plot
 scatter = sns.scatterplot(data = pca_df, x = 'PCA_1', y = 'PCA_2')
 st.pyplot(scatter.figure)
