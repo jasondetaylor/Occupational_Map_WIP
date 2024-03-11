@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objs as go
+from streamlit_plotly_events import plotly_events
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
@@ -78,24 +79,22 @@ pca_df = pca_df.join(occupation_data)
 
 #-----------------------  WEBPAGE CONFIGURATION  -----------------------#
 # 1. GENERAL
-# page title
-st.write('Map')
-
 # column config for plot and occupation desciption
-col_list = st.columns(2)
+col_list = st.columns([0.7, 0.3]) # set proportional width of cols
 
-# 2. DISPLAY SCATTER PLOT 
+# 2. CREATE SCATTER PLOT       
 with col_list[0]:
+    # base plot
     fig = go.Figure()
     # base plot
     fig.add_trace(go.Scatter(x = pca_df['PCA_1'], 
-                             y = pca_df['PCA_2'], 
-                             mode = 'text',
-                             text = pca_df['Title'],
-                             textposition = 'middle center',
-                             textfont = dict(size = 16)))
-
-    # remove plot features
+                             y = pca_df['PCA_2']))
+                            #  mode = 'text',
+                            #  text = pca_df['Title'],
+                            #  textposition = 'middle center',
+                            #  textfont = dict(size = 16)))
+    
+    # remove plot features and specify plot height
     fig.update_layout(xaxis = dict(showline = False,
                                    zeroline = False,
                                    showgrid = False,
@@ -106,10 +105,18 @@ with col_list[0]:
                                    showticklabels = False))
 
     # display
-    st.plotly_chart(fig)
+    #st.plotly_chart(fig, use_container_width = True)
+    selected_points = plotly_events(fig) #override_height = '800px') # this resizes but does not allow clicked data to be assigned to variable
 
 # 3. DISPLAY OCCUPATION DETAILS
 with col_list[1]:
     occupation = pca_df.iloc[0] # first row is most similar match
     st.subheader(f"{occupation['Title']}") # display occupation title
-    st.write(f"{occupation['Description']}") # display occupation desc
+    st.write(f"{occupation['Description']}") # display occupation description
+
+#----------------------  RE-COMPUTE USER CLICKS  ----------------------#
+# use streamlit component from https://github.com/null-jones/streamlit-plotly-events
+# formatting seems tricky with this plot but does return data from clicked point
+
+
+st.write(selected_points)
