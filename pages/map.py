@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objs as go
+import plotly.express as px
 from streamlit_plotly_events import plotly_events
 
 from sklearn.decomposition import PCA
@@ -82,19 +83,15 @@ pca_df = pca_df.join(occupation_data)
 # column config for plot and occupation desciption
 col_list = st.columns([0.7, 0.3]) # set proportional width of cols
 
-# 2. CREATE SCATTER PLOT       
+# 2. CREATE SCATTER PLOT    
+# attempted to use plotly click data callback, ref https://dash.plotly.com/interactive-graphing
+# only compatible with dash, not streamlit, use plotly_events instead   
+
 with col_list[0]:
     # base plot
-    fig = go.Figure()
-    # base plot
-    fig.add_trace(go.Scatter(x = pca_df['PCA_1'], 
-                             y = pca_df['PCA_2']))
-                            #  mode = 'text',
-                            #  text = pca_df['Title'],
-                            #  textposition = 'middle center',
-                            #  textfont = dict(size = 16)))
+    fig= px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2', text = 'Title', opacity = 0) # height = 800 # height adjustment causes glitch
     
-    # remove plot features and specify plot height
+    # remove plot features
     fig.update_layout(xaxis = dict(showline = False,
                                    zeroline = False,
                                    showgrid = False,
@@ -104,8 +101,12 @@ with col_list[0]:
                                    showgrid = False,
                                    showticklabels = False))
 
-    # display
-    #st.plotly_chart(fig, use_container_width = True)
+    # ISSUES: 
+    # 1. seems to be many invisble points on plot that can be clicked
+    # 2. can't adjust plot height without either glitching or not returning click data
+    # 3. only the marker can be clicked, see if we can change marker bounding box to match text
+
+    # formatting seems tricky with this plot but does return data from clicked point
     selected_points = plotly_events(fig) #override_height = '800px') # this resizes but does not allow clicked data to be assigned to variable
 
 # 3. DISPLAY OCCUPATION DETAILS
@@ -115,8 +116,5 @@ with col_list[1]:
     st.write(f"{occupation['Description']}") # display occupation description
 
 #----------------------  RE-COMPUTE USER CLICKS  ----------------------#
-# use streamlit component from https://github.com/null-jones/streamlit-plotly-events
-# formatting seems tricky with this plot but does return data from clicked point
 
-
-st.write(selected_points)
+st.write(selected_points) # test to see click data
