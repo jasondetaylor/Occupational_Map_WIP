@@ -32,7 +32,7 @@ similarities_sorted = np.argsort(similarities).flatten() # sort indexes from mos
 best_match_id = similarities_sorted[0]
 
 # 2. FIND CLOSEST MATCHES TO BEST MATCH
-n = 30 # number of points to display on plot
+n = 20 # number of points to display on plot
 
 # option 1: based on similarity to user input vector
 most_similar_indexes = similarities_sorted[:n]
@@ -89,7 +89,7 @@ col_list = st.columns([0.7, 0.3]) # set proportional width of cols
 
 with col_list[0]:
     # base plot
-    fig= px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2', text = 'Title', opacity = 0) # height = 800 # height adjustment causes glitch
+    fig = px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2', text = 'Title', color_discrete_sequence = ['red']) # height = 800 # height adjustment causes glitch
     
     # remove plot features
     fig.update_layout(xaxis = dict(showline = False,
@@ -99,15 +99,22 @@ with col_list[0]:
                       yaxis = dict(showline = False,
                                    zeroline = False,
                                    showgrid = False,
-                                   showticklabels = False))
+                                   showticklabels = False),
+                      paper_bgcolor = 'rgba(0,0,0,0)',
+                      plot_bgcolor = 'rgba(0,0,0,0)')
+
+    fig.update_traces(textfont = dict(color = 'white', size = 16), hoverinfo = 'none')
 
     # ISSUES: 
-    # 1. seems to be many invisble points on plot that can be clicked
-    # 2. can't adjust plot height without either glitching or not returning click data
-    # 3. only the marker can be clicked, see if we can change marker bounding box to match text
+    # removing hover info:
+    #   - applying 'hovermode = False' within update layout disables click events
+    #   - applying hovertemplate = 'none' to update_traces shows no info on pop up but not disabled
+    #   - hoverinfo = 'skip' or 'none' to update traces does not seem to have any effect
+    # can't adjust plot height without either glitching or not returning click data
+    # only the marker can be clicked, see if we can change marker bounding box to match text
 
     # formatting seems tricky with this plot but does return data from clicked point
-    selected_points = plotly_events(fig) #override_height = '800px') # this resizes but does not allow clicked data to be assigned to variable
+    selected_points = plotly_events(fig) # use_container_width = True) #override_height = '800px') # this resizes but does not allow clicked data to be assigned to variable
 
 # 3. DISPLAY OCCUPATION DETAILS
 with col_list[1]:
