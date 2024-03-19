@@ -77,18 +77,6 @@ def modeling_wrapper(best_match_id):
 
     return pca_df
 
-# apply modeling for checkbox data, use first index of sorted similarity array for this iteration
-# Initialize initial_index if it's not in session state
-if 'initial_index' not in st.session_state:
-    st.session_state.initial_index = None
-
-initial_index = st.session_state.initial_index # assign to session state
-if initial_index is None: # if plot has not been generated yet, use checkbox data
-    initial_index = similarities_sorted[0]
-    st.session_state.initial_index = initial_index
-
-pca_df = modeling_wrapper(best_match_id = initial_index)
-
 #-----------------------  WEBPAGE CONFIGURATION  -----------------------#
 # 1. CREATE SCATTER PLOT    
 # attempted to use plotly click data callback, ref https://dash.plotly.com/interactive-graphing
@@ -128,25 +116,36 @@ def scatter_plot_generator(pca_df):
 # column config for plot and occupation desciption
 col_list = st.columns([0.7, 0.3]) # set proportional width of cols
 
-with col_list[0]:
-    selected_points = plotly_events(scatter_plot_generator(pca_df), override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable
-
-# 3. DISPLAY OCCUPATION DETAILS
-with col_list[1]:
-    occupation = pca_df.iloc[0] # first row is most similar match
-    st.subheader(f"{occupation['Title']}") # display occupation title
-    st.write(f"{occupation['Description']}") # display occupation description
-
-#----------------------  RE-COMPUTE USER CLICKS  ----------------------#
-
-st.write(selected_points) # test to see click data
+if 'selected_points' not in st.session_state:
+    st.session_state.selected_points = None
+selected_points = st.session_state.selected_points
 
 if selected_points: # click event occured
+    st.write('2nd iter')
+    st.write(selected_points) # this is empty after a click, not sure why
     pca_df = modeling_wrapper(best_match_id = selected_points[0]['pointIndex']) # update based on id of clicked point (pull index from dict)
     with col_list[0]:
-        selected_points = plotly_events(scatter_plot_generator(pca_df), override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable
+        selected_points = plotly_events(scatter_plot_generator(pca_df))# override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable
+        st.session_state.selected_points = selected_points # save to session state
 
     with col_list[1]:
         occupation = pca_df.iloc[0] # first row is most similar match
         st.subheader(f"{occupation['Title']}") # display occupation title
         st.write(f"{occupation['Description']}") # display occupation description
+
+else: # first iteration of plot generation
+    st.write('1st iter')
+    pca_df = modeling_wrapper(best_match_id = similarities_sorted[0]) # generate dataframe
+
+    # disaply plot
+    with col_list[0]:
+        selected_points = plotly_events(scatter_plot_generator(pca_df))# override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable
+        st.session_state.selected_points = selected_points # save to session state
+
+    # display details
+    with col_list[1]:
+        occupation = pca_df.iloc[0] # first row is most similar match
+        st.subheader(f"{occupation['Title']}") # display occupation title
+        st.write(f"{occupation['Description']}") # display occupation description
+
+    st.write(selected_points)
