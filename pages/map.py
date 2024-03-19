@@ -19,6 +19,15 @@ st.set_page_config(layout = "wide")
 df = st.session_state.df
 user_input_vector = st.session_state.user_input_vector
 
+# read in occupation data
+@st.cache_data
+def load_occupation():
+    occupation_data = pd.read_excel('db_28_2_excel/Occupation Data.xlsx')
+    return occupation_data
+
+occupation_data = load_occupation()
+occupation_data.set_index('O*NET-SOC Code', inplace = True) # set code as index to match pca_df to match previous df
+
 #-----------------------------  MODELING  ------------------------------#
 # 1. FIND BEST MATCHES BASED ON CHECKBOX DATA
 # reshape user input to be 2d to match our df
@@ -27,71 +36,74 @@ user_input_reshaped = user_input_vector.reshape(1, -1)
 # calculate similarities
 similarities = cosine_similarity(user_input_reshaped, df)
 
-# find best match
+# sort occupations by similarity
 similarities_sorted = np.argsort(similarities).flatten() # sort indexes from most to least similar
-best_match_id = similarities_sorted[0]
 
 # 2. FIND CLOSEST MATCHES TO BEST MATCH
-n = 20 # number of points to display on plot
+# use a wrapper function to use the same process for the intial plot and scatter plot clicks
+def modeling_wrapper(best_match_id):
+    ''' takes in the a specified number of points and a user input vector. returns a dataframe of 
+    pca dimsensions with occupation details of n number of closest occupations to user input based 
+    on KNN calculation. '''
+    # find most similar based on distances using KNN
+    # scale
+    scaler = RobustScaler()
+    df_scaled = scaler.fit_transform(df)
 
-# option 1: based on similarity to user input vector
-most_similar_indexes = similarities_sorted[:n]
+    # convert back to df
+    df_scaled = pd.DataFrame(df_scaled, columns = df.columns, index = df.index)
 
-# Option 2: based on distances using KNN
-# scale
-scaler = RobustScaler()
-df_scaled = scaler.fit_transform(df)
+    # select row
+    best_match_row = df_scaled.iloc[best_match_id].values.reshape(1, -1) # convert series to array and reshape 
 
-# convert back to df
-df_scaled = pd.DataFrame(df_scaled, columns = df.columns, index = df.index)
+    # apply KNN
+    knn = NearestNeighbors(n_neighbors = 30)
+    knn.fit(df_scaled)
+    distances, nearest_indexes = knn.kneighbors(best_match_row)
 
-# select row
-best_match_row = df_scaled.iloc[best_match_id].values.reshape(1, -1) # convert series to array and reshape 
+    # apply filtering
+    most_similar_data = df.iloc[nearest_indexes.flatten()]
 
-# apply KNN
-knn = NearestNeighbors(n_neighbors = n)
-knn.fit(df_scaled)
-distances, nearest_indexes = knn.kneighbors(best_match_row)
+    # 3. APPLY PCA
+    # dimensionality reduction
+    pca = PCA(n_components = 2)
+    reduced_data = pca.fit_transform(most_similar_data)
 
-# apply filtering
-#most_similar_data = df.iloc[most_similar_indexes.flatten()] # option 1
-most_similar_data = df.iloc[nearest_indexes.flatten()] # option 2
+    # convert back to dataframe
+    pca_df = pd.DataFrame(data = reduced_data, columns = ['PCA_1', 'PCA_2'], index = most_similar_data.index)
 
-# 3. APPLY PCA
-# dimensionality reduction
-pca = PCA(n_components = 2)
-reduced_data = pca.fit_transform(most_similar_data)
+    # merge with occupation data to retrive titles and descriptions based on code index
+    pca_df = pca_df.join(occupation_data)
 
-# convert back to dataframe
-pca_df = pd.DataFrame(data = reduced_data, columns = ['PCA_1', 'PCA_2'], index = most_similar_data.index)
+    return pca_df
 
-# 4. MERGE WITH OCCUPATION DATA TO RETRIEVE TITLES AND DESCRIPTIONS
-# read in occupation data
-@st.cache_data
-def load_occupation():
-    occupation_data = pd.read_excel('db_28_2_excel/Occupation Data.xlsx')
-    return occupation_data
+# apply modeling for checkbox data, use first index of sorted similarity array for this iteration
+# Initialize initial_index if it's not in session state
+if 'initial_index' not in st.session_state:
+    st.session_state.initial_index = None
 
-occupation_data = load_occupation()
-occupation_data.set_index('O*NET-SOC Code', inplace = True) # set code as index to match pca_df to make merging easier
+initial_index = st.session_state.initial_index # assign to session state
+if initial_index is None: # if plot has not been generated yet, use checkbox data
+    initial_index = similarities_sorted[0]
+    st.session_state.initial_index = initial_index
 
-# join df's based on codes (indexes)
-pca_df = pca_df.join(occupation_data)
+pca_df = modeling_wrapper(best_match_id = initial_index)
 
 #-----------------------  WEBPAGE CONFIGURATION  -----------------------#
-# 1. GENERAL
-# column config for plot and occupation desciption
-col_list = st.columns([0.7, 0.3]) # set proportional width of cols
-
-# 2. CREATE SCATTER PLOT    
+# 1. CREATE SCATTER PLOT    
 # attempted to use plotly click data callback, ref https://dash.plotly.com/interactive-graphing
 # only compatible with dash, not streamlit, use plotly_events instead   
-
-with col_list[0]:
+def scatter_plot_generator(pca_df):
+    fig = go.Figure()
     # base plot
-    fig = px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2', text = 'Title', color_discrete_sequence = ['red']) # height = 800 # height adjustment causes glitch
-    
-    # remove plot features
+    fig.add_trace(go.Scatter(x = pca_df['PCA_1'], 
+                             y = pca_df['PCA_2'], 
+                             mode = 'text+markers',
+                             text = pca_df['Title'],
+                             textposition = 'middle center',
+                             textfont = dict(size = 16)))
+
+    # remove plot features and specify plot height
     fig.update_layout(xaxis = dict(showline = False,
                                    zeroline = False,
                                    showgrid = False,
@@ -99,22 +111,25 @@ with col_list[0]:
                       yaxis = dict(showline = False,
                                    zeroline = False,
                                    showgrid = False,
-                                   showticklabels = False),
-                      paper_bgcolor = 'rgba(0,0,0,0)',
-                      plot_bgcolor = 'rgba(0,0,0,0)')
-
-    fig.update_traces(textfont = dict(color = 'white', size = 16), hoverinfo = 'none')
+                                   showticklabels = False))
+                      #hovermode = 'closest')
+                      #height = 900) # applying here causes glitch, instead use override_height in plotly_events
 
     # ISSUES: 
     # removing hover info:
     #   - applying 'hovermode = False' within update layout disables click events
     #   - applying hovertemplate = 'none' to update_traces shows no info on pop up but not disabled
     #   - hoverinfo = 'skip' or 'none' to update traces does not seem to have any effect
-    # can't adjust plot height without either glitching or not returning click data
     # only the marker can be clicked, see if we can change marker bounding box to match text
 
-    # formatting seems tricky with this plot but does return data from clicked point
-    selected_points = plotly_events(fig) # use_container_width = True) #override_height = '800px') # this resizes but does not allow clicked data to be assigned to variable
+    return fig
+
+
+# column config for plot and occupation desciption
+col_list = st.columns([0.7, 0.3]) # set proportional width of cols
+
+with col_list[0]:
+    selected_points = plotly_events(scatter_plot_generator(pca_df), override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable
 
 # 3. DISPLAY OCCUPATION DETAILS
 with col_list[1]:
@@ -125,3 +140,13 @@ with col_list[1]:
 #----------------------  RE-COMPUTE USER CLICKS  ----------------------#
 
 st.write(selected_points) # test to see click data
+
+if selected_points: # click event occured
+    pca_df = modeling_wrapper(best_match_id = selected_points[0]['pointIndex']) # update based on id of clicked point (pull index from dict)
+    with col_list[0]:
+        selected_points = plotly_events(scatter_plot_generator(pca_df), override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable
+
+    with col_list[1]:
+        occupation = pca_df.iloc[0] # first row is most similar match
+        st.subheader(f"{occupation['Title']}") # display occupation title
+        st.write(f"{occupation['Description']}") # display occupation description
