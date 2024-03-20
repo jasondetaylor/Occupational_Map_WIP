@@ -88,8 +88,8 @@ def scatter_plot_generator(pca_df):
                              y = pca_df['PCA_2'], 
                              mode = 'text+markers',
                              text = pca_df['Title'],
-                             textposition = 'middle center',
-                             textfont = dict(size = 16)))
+                             textposition = 'top center',
+                             textfont = dict(size = 16, color = '#4DBEEE')))
 
     # remove plot features and specify plot height
     fig.update_layout(xaxis = dict(showline = False,
@@ -99,7 +99,9 @@ def scatter_plot_generator(pca_df):
                       yaxis = dict(showline = False,
                                    zeroline = False,
                                    showgrid = False,
-                                   showticklabels = False))
+                                   showticklabels = False),
+                      paper_bgcolor = 'rgba(0,0,0,0)',
+                      plot_bgcolor = 'rgba(0,0,0,0)')
                       #hovermode = 'closest')
                       #height = 900) # applying here causes glitch, instead use override_height in plotly_events
 
@@ -108,7 +110,7 @@ def scatter_plot_generator(pca_df):
     #   - applying 'hovermode = False' within update layout disables click events
     #   - applying hovertemplate = 'none' to update_traces shows no info on pop up but not disabled
     #   - hoverinfo = 'skip' or 'none' to update traces does not seem to have any effect
-    # only the marker can be clicked, see if we can change marker bounding box to match text
+    # only the marker can be clicked, see if we can cuse a clickable bounding box to match text length
 
     return fig
 
@@ -116,36 +118,34 @@ def scatter_plot_generator(pca_df):
 # column config for plot and occupation desciption
 col_list = st.columns([0.7, 0.3]) # set proportional width of cols
 
+# initialize session state for selected_points
 if 'selected_points' not in st.session_state:
     st.session_state.selected_points = None
 selected_points = st.session_state.selected_points
 
-if selected_points: # click event occured
-    st.write('2nd iter')
-    st.write(selected_points) # this is empty after a click, not sure why
-    pca_df = modeling_wrapper(best_match_id = selected_points[0]['pointIndex']) # update based on id of clicked point (pull index from dict)
+def page_layout(best_match_id):
+    pca_df = modeling_wrapper(best_match_id = best_match_id) 
     with col_list[0]:
         selected_points = plotly_events(scatter_plot_generator(pca_df))# override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable
-        st.session_state.selected_points = selected_points # save to session state
 
     with col_list[1]:
         occupation = pca_df.iloc[0] # first row is most similar match
         st.subheader(f"{occupation['Title']}") # display occupation title
         st.write(f"{occupation['Description']}") # display occupation description
+
+    return pca_df, selected_points
+
+if selected_points: # click event occured
+    st.write('2nd iter')
+    pca_df, selected_points = page_layout(best_match_id = selected_points[0]['pointIndex']) # update based on id of clicked point (pull index from dict)
+    st.session_state.selected_points = selected_points # save to session state
+
 
 else: # first iteration of plot generation
     st.write('1st iter')
-    pca_df = modeling_wrapper(best_match_id = similarities_sorted[0]) # generate dataframe
+    pca_df, selected_points = page_layout(best_match_id = similarities_sorted[0]) # generate dataframe
+    st.session_state.selected_points = selected_points # save to session state
 
-    # disaply plot
-    with col_list[0]:
-        selected_points = plotly_events(scatter_plot_generator(pca_df))# override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable
-        st.session_state.selected_points = selected_points # save to session state
 
-    # display details
-    with col_list[1]:
-        occupation = pca_df.iloc[0] # first row is most similar match
-        st.subheader(f"{occupation['Title']}") # display occupation title
-        st.write(f"{occupation['Description']}") # display occupation description
-
-    st.write(selected_points)
+st.write(selected_points)
+st.write(pca_df)
