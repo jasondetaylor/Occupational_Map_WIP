@@ -28,24 +28,15 @@ def load_occupation():
 occupation_data = load_occupation()
 occupation_data.set_index('O*NET-SOC Code', inplace = True) # set code as index to match pca_df to match previous df
 
-#-----------------------------  MODELING  ------------------------------#
-# 1. FIND BEST MATCHES BASED ON CHECKBOX DATA
-# reshape user input to be 2d to match our df
-user_input_reshaped = user_input_vector.reshape(1, -1)
-
-# calculate similarities
-similarities = cosine_similarity(user_input_reshaped, df)
-
-# sort occupations by similarity
-similarities_sorted = np.argsort(similarities).flatten() # sort indexes from most to least similar
-
-# 2. FIND CLOSEST MATCHES TO BEST MATCH
+#-----------------------------  FUNCTIONS  ------------------------------#
+# 1. FIND NEAREST NEIGHBORS TO OCCUPATION
+# note: 'occupation' is either the highest cosine similarity score first 1st iteration, or click data for subsequent iterations
 # use a wrapper function to use the same process for the intial plot and scatter plot clicks
-def modeling_wrapper(best_match_id):
-    ''' takes in the a specified number of points and a user input vector. returns a dataframe of 
+def modeling_wrapper(best_match_idx):
+    ''' takes in the a specified number of points and a best matched occupation index. returns a dataframe of 
     pca dimsensions with occupation details of n number of closest occupations to user input based 
     on KNN calculation. '''
-    # find most similar based on distances using KNN
+    # 1A. FIND MOST SIMILAR BASED ON DISTANCES USING KNN
     # scale
     scaler = RobustScaler()
     df_scaled = scaler.fit_transform(df)
@@ -54,7 +45,7 @@ def modeling_wrapper(best_match_id):
     df_scaled = pd.DataFrame(df_scaled, columns = df.columns, index = df.index)
 
     # select row
-    best_match_row = df_scaled.iloc[best_match_id].values.reshape(1, -1) # convert series to array and reshape 
+    best_match_row = df_scaled.iloc[best_match_idx].values.reshape(1, -1) # convert series to array and reshape 
 
     # apply KNN
     knn = NearestNeighbors(n_neighbors = 30)
@@ -64,7 +55,7 @@ def modeling_wrapper(best_match_id):
     # apply filtering
     most_similar_data = df.iloc[nearest_indexes.flatten()]
 
-    # 3. APPLY PCA
+    # 1B. APPLY PCA
     # dimensionality reduction
     pca = PCA(n_components = 2)
     reduced_data = pca.fit_transform(most_similar_data)
@@ -72,13 +63,14 @@ def modeling_wrapper(best_match_id):
     # convert back to dataframe
     pca_df = pd.DataFrame(data = reduced_data, columns = ['PCA_1', 'PCA_2'], index = most_similar_data.index)
 
+    # 1C. CREATE DATAFRAME TO PASS TO PLOT
     # merge with occupation data to retrive titles and descriptions based on code index
     pca_df = pca_df.join(occupation_data)
 
     return pca_df
 
-#-----------------------  WEBPAGE CONFIGURATION  -----------------------#
-# 1. CREATE SCATTER PLOT    
+
+# 2. CREATE SCATTER PLOT    
 # attempted to use plotly click data callback, ref https://dash.plotly.com/interactive-graphing
 # only compatible with dash, not streamlit, use plotly_events instead   
 def scatter_plot_generator(pca_df):
@@ -115,16 +107,9 @@ def scatter_plot_generator(pca_df):
     return fig
 
 
-# column config for plot and occupation desciption
-col_list = st.columns([0.7, 0.3]) # set proportional width of cols
-
-# initialize session state for selected_points
-if 'selected_points' not in st.session_state:
-    st.session_state.selected_points = None
-selected_points = st.session_state.selected_points
-
-def page_layout(best_match_id):
-    pca_df = modeling_wrapper(best_match_id = best_match_id) 
+# 3. POPULATE WEBPAGE
+def page_layout(best_match_idx):
+    pca_df = modeling_wrapper(best_match_idx = best_match_idx) 
     with col_list[0]:
         selected_points = plotly_events(scatter_plot_generator(pca_df))# override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable
 
@@ -134,16 +119,31 @@ def page_layout(best_match_id):
         st.write(f"{occupation['Description']}") # display occupation description
 
     return pca_df, selected_points
+    
+#-----------------------------  MODELING AND DISPLAY  ------------------------------#
+# column config for plot and occupation desciption
+col_list = st.columns([0.7, 0.3]) # set proportional width of cols
+
+# initialize session state for selected_points
+if 'selected_points' not in st.session_state:
+    st.session_state.selected_points = None
+selected_points = st.session_state.selected_points
 
 if selected_points: # click event occured
     st.write('2nd iter')
-    pca_df, selected_points = page_layout(best_match_id = selected_points[0]['pointIndex']) # update based on id of clicked point (pull index from dict)
+    # generated df and plot
+    pca_df, selected_points = page_layout(best_match_idx = selected_points[0]['pointIndex']) # update based on id of clicked point (pull index from dict)
     st.session_state.selected_points = selected_points # save to session state
-
 
 else: # first iteration of plot generation
     st.write('1st iter')
-    pca_df, selected_points = page_layout(best_match_id = similarities_sorted[0]) # generate dataframe
+    # FIND BEST MATCHES BASED ON CHECKBOX DATA
+    # calculate similarities
+    similarities = cosine_similarity(user_input_vector.reshape(1, -1), df) # reshape user input to be 2d to match our df
+    # sort occupations by similarity
+    similarities_idx_sorted = np.argsort(similarities).flatten() # sort indexes from most to least similar
+    # generated df and plot
+    pca_df, selected_points = page_layout(best_match_idx = similarities_idx_sorted[0]) # based on most similar match
     st.session_state.selected_points = selected_points # save to session state
 
 
