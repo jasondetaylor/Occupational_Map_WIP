@@ -81,7 +81,7 @@ def scatter_plot_generator(pca_df):
                              mode = 'text+markers',
                              text = pca_df['Title'],
                              textposition = 'top center',
-                             textfont = dict(size = 16, color = '#4DBEEE')))
+                             textfont = dict(size = 16, color = '#4DBEEE'))) # 'MATLAB blue'
 
     # remove plot features and specify plot height
     fig.update_layout(xaxis = dict(showline = False,
@@ -119,33 +119,54 @@ def page_layout(best_match_idx):
         st.write(f"{occupation['Description']}") # display occupation description
 
     return pca_df, selected_points
-    
+
 #-----------------------------  MODELING AND DISPLAY  ------------------------------#
-# column config for plot and occupation desciption
+# column config for plot and occupation description
 col_list = st.columns([0.7, 0.3]) # set proportional width of cols
 
 # initialize session state for selected_points
 if 'selected_points' not in st.session_state:
-    st.session_state.selected_points = None
+    st.session_state.selected_points = []
+
+# pull selected_points from session state
 selected_points = st.session_state.selected_points
 
-if selected_points: # click event occured
+# setup rerun requirements
+# note when a new plot is generated, selected_points is reset to an empty list. to get around this we will trigger a rerun to exit out 
+# of the code and rerun with the newly obtained slected_points containing the click data.
+if 'rerun_complete' not in st.session_state:
+    st.session_state.rerun_complete = False
+
+def rerun():
+    if selected_points and st.session_state.rerun_complete == False: # plot has been clicked and selected_points now contains click data
+        st.rerun() # skip this iteration to regenerate the plot retain click data in selected_points variable
+        st.session_state.rerun_complete = True # only rerun once
+
+st.write(st.session_state.selected_points)
+
+@st.cache_data
+def selected_points_store(selected_points):
+    st.session_state.selected_points = selected_points
+
+if selected_points:
     st.write('2nd iter')
+    # FIND BEST MATCHES BASED ON CLICK DATA
     # generated df and plot
-    pca_df, selected_points = page_layout(best_match_idx = selected_points[0]['pointIndex']) # update based on id of clicked point (pull index from dict)
-    st.session_state.selected_points = selected_points # save to session state
+    pca_df, selected_points = page_layout(best_match_idx = selected_points[0]['pointIndex']) # based on id of clicked point (pull index from dict)
+    selected_points_store(selected_points)
+    rerun() # envoke a rerun
 
 else: # first iteration of plot generation
     st.write('1st iter')
     # FIND BEST MATCHES BASED ON CHECKBOX DATA
     # calculate similarities
-    similarities = cosine_similarity(user_input_vector.reshape(1, -1), df) # reshape user input to be 2d to match our df
+    similarities = cosine_similarity(user_input_vector.reshape(1, -1), df) # with user input reshaped to 2d to match our df
     # sort occupations by similarity
-    similarities_idx_sorted = np.argsort(similarities).flatten() # sort indexes from most to least similar
+    similarities_idx_sorted = np.argsort(similarities).flatten() # sort indexes from most to least similar in array form
     # generated df and plot
     pca_df, selected_points = page_layout(best_match_idx = similarities_idx_sorted[0]) # based on most similar match
-    st.session_state.selected_points = selected_points # save to session state
+    selected_points_store(selected_points)
+    rerun()# envoke a rerun
 
+st.write(st.session_state.selected_points)
 
-st.write(selected_points)
-st.write(pca_df)
