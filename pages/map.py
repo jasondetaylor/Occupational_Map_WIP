@@ -147,8 +147,6 @@ if 'pca_df' not in st.session_state:
     st.session_state.pca_df = pd.DataFrame({})
 #pca_df = st.session_state.pca_df
 
-
-
 # setup rerun requirements
 # note when a new plot is generated, selected_points is reset to an empty list. to get around this we will trigger a rerun to exit out 
 # of the code and rerun with the newly obtained slected_points containing the click data.
@@ -177,9 +175,9 @@ if selected_points:
     # generated df and plot
     pca_df, selected_points = page_layout(best_match_idx = selected_points[0]['pointIndex'], iteration = 2) # based on id of clicked point (pull index from dict)
     st.write(pca_df)
+    st.write(selected_points)
     st.session_state.pca_df = pca_df
     selected_points_store(selected_points)
-    rerun() # envoke a rerun
 
 else: # first iteration of plot generation
     st.write('1st iter')
@@ -193,8 +191,9 @@ else: # first iteration of plot generation
     st.write(pca_df)
     st.session_state.pca_df = pca_df
     selected_points_store(selected_points)
-    rerun() # envoke a rerun
 
-st.session_state.rerun_complete = False # reset
-st.write(st.session_state.selected_points)
+#st.session_state.rerun_complete = False # reset
+st.write(selected_points)
 
+if selected_points: # click event occured
+    st.rerun()
