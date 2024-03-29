@@ -32,7 +32,7 @@ occupation_data.set_index('O*NET-SOC Code', inplace = True) # set code as index 
 # 1. FIND NEAREST NEIGHBORS TO OCCUPATION
 # note: 'occupation' is either the highest cosine similarity score first 1st iteration, or click data for subsequent iterations
 # use a wrapper function to use the same process for the intial plot and scatter plot clicks
-def modeling_wrapper(best_match_idx):
+def modeling_wrapper(best_match_idx, iteration):
     ''' takes in the a specified number of points and a best matched occupation index. returns a dataframe of 
     pca dimsensions with occupation details of n number of closest occupations to user input based 
     on KNN calculation. '''
@@ -43,12 +43,19 @@ def modeling_wrapper(best_match_idx):
 
     # convert back to df
     df_scaled = pd.DataFrame(df_scaled, columns = df.columns, index = df.index)
+    #best_match_row = df_scaled.iloc[best_match_idx].values.reshape(1, -1) # convert series to array and reshape 
 
     # select row
-    best_match_row = df_scaled.iloc[best_match_idx].values.reshape(1, -1) # convert series to array and reshape 
+    if iteration == 1:
+        code = None
+        best_match_row = df_scaled.iloc[best_match_idx].values.reshape(1, -1) # convert series to array and reshape 
+    if iteration == 2:
+        code = st.session_state.pca_df.index[best_match_idx] # use previous dataframe via session state
+        st.write(code)
+        best_match_row = df_scaled.loc[code].values.reshape(1, -1)
 
     # apply KNN
-    knn = NearestNeighbors(n_neighbors = 30)
+    knn = NearestNeighbors(n_neighbors = 5)
     knn.fit(df_scaled)
     distances, nearest_indexes = knn.kneighbors(best_match_row)
 
@@ -67,7 +74,7 @@ def modeling_wrapper(best_match_idx):
     # merge with occupation data to retrive titles and descriptions based on code index
     pca_df = pca_df.join(occupation_data)
 
-    return pca_df
+    return pca_df, code
 
 
 # 2. CREATE SCATTER PLOT    
@@ -108,15 +115,21 @@ def scatter_plot_generator(pca_df):
 
 
 # 3. POPULATE WEBPAGE
-def page_layout(best_match_idx):
-    pca_df = modeling_wrapper(best_match_idx = best_match_idx) 
+def page_layout(best_match_idx, iteration):
+    pca_df, code = modeling_wrapper(best_match_idx = best_match_idx, iteration = iteration) 
     with col_list[0]:
         selected_points = plotly_events(scatter_plot_generator(pca_df))# override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable
 
     with col_list[1]:
-        occupation = pca_df.iloc[0] # first row is most similar match
+        if iteration == 1:
+            occupation = pca_df.iloc[0]
+        if iteration == 2:    
+            occupation = occupation_data.loc[code]
+            
         st.subheader(f"{occupation['Title']}") # display occupation title
         st.write(f"{occupation['Description']}") # display occupation description
+
+        
 
     return pca_df, selected_points
 
@@ -127,9 +140,14 @@ col_list = st.columns([0.7, 0.3]) # set proportional width of cols
 # initialize session state for selected_points
 if 'selected_points' not in st.session_state:
     st.session_state.selected_points = []
-
 # pull selected_points from session state
 selected_points = st.session_state.selected_points
+
+if 'pca_df' not in st.session_state:
+    st.session_state.pca_df = pd.DataFrame({})
+#pca_df = st.session_state.pca_df
+
+
 
 # setup rerun requirements
 # note when a new plot is generated, selected_points is reset to an empty list. to get around this we will trigger a rerun to exit out 
@@ -141,18 +159,25 @@ def rerun():
     if selected_points and st.session_state.rerun_complete == False: # plot has been clicked and selected_points now contains click data
         st.rerun() # skip this iteration to regenerate the plot retain click data in selected_points variable
         st.session_state.rerun_complete = True # only rerun once
+        #selected_points_store(selected_points)
 
 st.write(st.session_state.selected_points)
 
-@st.cache_data
+
+# this cache does redo plot every time but doesn't allow updates to selected_points
+# running without cache requires 2 clicks (first goes back through 1st iter loop) but does update plot correctly with matching description on second click
+#@st.cache_data # only update if plot is clicked
 def selected_points_store(selected_points):
     st.session_state.selected_points = selected_points
+selected_points = st.session_state.selected_points
 
 if selected_points:
     st.write('2nd iter')
     # FIND BEST MATCHES BASED ON CLICK DATA
     # generated df and plot
-    pca_df, selected_points = page_layout(best_match_idx = selected_points[0]['pointIndex']) # based on id of clicked point (pull index from dict)
+    pca_df, selected_points = page_layout(best_match_idx = selected_points[0]['pointIndex'], iteration = 2) # based on id of clicked point (pull index from dict)
+    st.write(pca_df)
+    st.session_state.pca_df = pca_df
     selected_points_store(selected_points)
     rerun() # envoke a rerun
 
@@ -164,9 +189,12 @@ else: # first iteration of plot generation
     # sort occupations by similarity
     similarities_idx_sorted = np.argsort(similarities).flatten() # sort indexes from most to least similar in array form
     # generated df and plot
-    pca_df, selected_points = page_layout(best_match_idx = similarities_idx_sorted[0]) # based on most similar match
+    pca_df, selected_points = page_layout(best_match_idx = similarities_idx_sorted[0], iteration = 1) # based on most similar match
+    st.write(pca_df)
+    st.session_state.pca_df = pca_df
     selected_points_store(selected_points)
-    rerun()# envoke a rerun
+    rerun() # envoke a rerun
 
+st.session_state.rerun_complete = False # reset
 st.write(st.session_state.selected_points)
 
