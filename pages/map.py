@@ -58,7 +58,6 @@ def modeling_wrapper(code, df_scaled = df_scaled):
 
     # apply filtering
     most_similar_data = df.iloc[nearest_indexes.flatten()]
-    st.write(most_similar_data)
 
     # 1B. APPLY PCA
     # dimensionality reduction
@@ -157,7 +156,8 @@ def rerun():
         st.rerun() # skip this iteration to regenerate the plot, retain click data in selected_points variable
         st.session_state.rerun_complete = True # only rerun once
 
-st.write(st.session_state.selected_points)
+
+st.write(st.session_state.rerun_complete)
 
 @st.cache_data
 def selected_points_store(selected_points):
@@ -170,7 +170,6 @@ if selected_points:
     pca_df, selected_points, code = page_layout(code) # based on id of clicked point (pull index from dict)
     selected_points_store(selected_points) # save to session state with cache active
     st.session_state.code = code # save to session state
-    #code = pca_df.index[selected_points[0]['pointIndex']]
     rerun() # envoke a rerun
 
 else: # first iteration of plot generation
@@ -184,11 +183,8 @@ else: # first iteration of plot generation
     pca_df, selected_points, code = page_layout(code = df.index[similarities_idx_sorted[0]]) # based on most similar match
     selected_points_store(selected_points)
     st.session_state.code = code # save to session state
-    #code = pca_df.index[0]
     rerun()# envoke a rerun
 
-st.write(code)
-st.write(pca_df)
-st.write(st.session_state.selected_points)
+
 st.write(st.session_state.rerun_complete)
 
