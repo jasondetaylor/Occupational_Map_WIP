@@ -28,32 +28,37 @@ def load_occupation():
 occupation_data = load_occupation()
 occupation_data.set_index('O*NET-SOC Code', inplace = True) # set code as index to match pca_df to match previous df
 
+#------------------------------  SCALING  -------------------------------#
+# scale
+scaler = RobustScaler()
+df_scaled = scaler.fit_transform(df)
+
+# convert back to df
+df_scaled = pd.DataFrame(df_scaled, columns = df.columns, index = df.index)
+
 #-----------------------------  FUNCTIONS  ------------------------------#
 # 1. FIND NEAREST NEIGHBORS TO OCCUPATION
 # note: 'occupation' is either the highest cosine similarity score first 1st iteration, or click data for subsequent iterations
 # use a wrapper function to use the same process for the intial plot and scatter plot clicks
-def modeling_wrapper(best_match_idx):
+def modeling_wrapper(code, df_scaled = df_scaled):
     ''' takes in the a specified number of points and a best matched occupation index. returns a dataframe of 
     pca dimsensions with occupation details of n number of closest occupations to user input based 
     on KNN calculation. '''
     # 1A. FIND MOST SIMILAR BASED ON DISTANCES USING KNN
-    # scale
-    scaler = RobustScaler()
-    df_scaled = scaler.fit_transform(df)
-
-    # convert back to df
-    df_scaled = pd.DataFrame(df_scaled, columns = df.columns, index = df.index)
-
     # select row
-    best_match_row = df_scaled.iloc[best_match_idx].values.reshape(1, -1) # convert series to array and reshape 
+    # here is the issue, we are taking the index from our plot and applying it to df_scaled, try and get code from plot instead
+    #best_match_row = df_scaled.iloc[best_match_idx].values.reshape(1, -1) # convert series to array and reshape 
+    best_match_row = df_scaled.loc[code].values.reshape(1, -1) # convert series to array and reshape 
+
 
     # apply KNN
-    knn = NearestNeighbors(n_neighbors = 30)
+    knn = NearestNeighbors(n_neighbors = 4)
     knn.fit(df_scaled)
     distances, nearest_indexes = knn.kneighbors(best_match_row)
 
     # apply filtering
     most_similar_data = df.iloc[nearest_indexes.flatten()]
+    st.write(most_similar_data)
 
     # 1B. APPLY PCA
     # dimensionality reduction
@@ -108,8 +113,8 @@ def scatter_plot_generator(pca_df):
 
 
 # 3. POPULATE WEBPAGE
-def page_layout(best_match_idx):
-    pca_df = modeling_wrapper(best_match_idx = best_match_idx) 
+def page_layout(code):
+    pca_df = modeling_wrapper(code = code) 
     with col_list[0]:
         selected_points = plotly_events(scatter_plot_generator(pca_df))# override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable
 
@@ -118,7 +123,9 @@ def page_layout(best_match_idx):
         st.subheader(f"{occupation['Title']}") # display occupation title
         st.write(f"{occupation['Description']}") # display occupation description
 
-    return pca_df, selected_points
+    code = pca_df.index[selected_points[0]['pointIndex']]
+
+    return pca_df, selected_points, code
 
 #-----------------------------  MODELING AND DISPLAY  ------------------------------#
 # column config for plot and occupation description
@@ -130,6 +137,12 @@ if 'selected_points' not in st.session_state:
 
 # pull selected_points from session state
 selected_points = st.session_state.selected_points
+
+# initialize session state for code
+if 'code' not in st.session_state:
+    st.session_state.code = None
+
+code = st.session_state.code
 
 # setup rerun requirements
 # note when a new plot is generated, selected_points is reset to an empty list. to get around this we will trigger a rerun to exit out 
@@ -152,21 +165,28 @@ if selected_points:
     st.write('2nd iter')
     # FIND BEST MATCHES BASED ON CLICK DATA
     # generated df and plot
-    pca_df, selected_points = page_layout(best_match_idx = selected_points[0]['pointIndex']) # based on id of clicked point (pull index from dict)
-    selected_points_store(selected_points)
+    pca_df, selected_points, code = page_layout(code) # based on id of clicked point (pull index from dict)
+    selected_points_store(selected_points) # save to session state with cache active
+    st.session_state.code = code # save to session state
+    #code = pca_df.index[selected_points[0]['pointIndex']]
     rerun() # envoke a rerun
 
 else: # first iteration of plot generation
     st.write('1st iter')
     # FIND BEST MATCHES BASED ON CHECKBOX DATA
     # calculate similarities
-    similarities = cosine_similarity(user_input_vector.reshape(1, -1), df) # with user input reshaped to 2d to match our df
+    similarities = cosine_similarity(user_input_vector.reshape(1, -1), df) # with user input reshaped to 2d to match our df   I THINK THIS SHOULD BE DF_SCALED
     # sort occupations by similarity
     similarities_idx_sorted = np.argsort(similarities).flatten() # sort indexes from most to least similar in array form
     # generated df and plot
-    pca_df, selected_points = page_layout(best_match_idx = similarities_idx_sorted[0]) # based on most similar match
+    #pca_df, selected_points = page_layout(best_match_idx = similarities_idx_sorted[0]) # based on most similar match
+    pca_df, selected_points, code = page_layout(code = '13-1021.00') # need to get code from cosine similarities, dummy code for now 'Buyers and Purchasing Agents, Farm Products'
     selected_points_store(selected_points)
+    st.session_state.code = code # save to session state
+    #code = pca_df.index[0]
     rerun()# envoke a rerun
 
+st.write(code)
+st.write(pca_df)
 st.write(st.session_state.selected_points)
 
