@@ -114,7 +114,7 @@ def scatter_plot_generator(pca_df):
 
 # 3. POPULATE WEBPAGE
 def page_layout(code):
-    pca_df = modeling_wrapper(code = code) 
+    pca_df = modeling_wrapper(code) 
     with col_list[0]:
         selected_points = plotly_events(scatter_plot_generator(pca_df))# override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable
 
@@ -123,7 +123,9 @@ def page_layout(code):
         st.subheader(f"{occupation['Title']}") # display occupation title
         st.write(f"{occupation['Description']}") # display occupation description
 
-    code = pca_df.index[selected_points[0]['pointIndex']]
+    # only recompute code on second iteration (after plot has been clicked)
+    if selected_points:
+        code = pca_df.index[selected_points[0]['pointIndex']] # recompute code
 
     return pca_df, selected_points, code
 
@@ -152,7 +154,7 @@ if 'rerun_complete' not in st.session_state:
 
 def rerun():
     if selected_points and st.session_state.rerun_complete == False: # plot has been clicked and selected_points now contains click data
-        st.rerun() # skip this iteration to regenerate the plot retain click data in selected_points variable
+        st.rerun() # skip this iteration to regenerate the plot, retain click data in selected_points variable
         st.session_state.rerun_complete = True # only rerun once
 
 st.write(st.session_state.selected_points)
@@ -175,12 +177,11 @@ else: # first iteration of plot generation
     st.write('1st iter')
     # FIND BEST MATCHES BASED ON CHECKBOX DATA
     # calculate similarities
-    similarities = cosine_similarity(user_input_vector.reshape(1, -1), df) # with user input reshaped to 2d to match our df   I THINK THIS SHOULD BE DF_SCALED
+    similarities = cosine_similarity(user_input_vector.reshape(1, -1), df) # with user input reshaped to 2d to match our df (note can use scaled or not here)
     # sort occupations by similarity
     similarities_idx_sorted = np.argsort(similarities).flatten() # sort indexes from most to least similar in array form
     # generated df and plot
-    #pca_df, selected_points = page_layout(best_match_idx = similarities_idx_sorted[0]) # based on most similar match
-    pca_df, selected_points, code = page_layout(code = '13-1021.00') # need to get code from cosine similarities, dummy code for now 'Buyers and Purchasing Agents, Farm Products'
+    pca_df, selected_points, code = page_layout(code = df.index[similarities_idx_sorted[0]]) # based on most similar match
     selected_points_store(selected_points)
     st.session_state.code = code # save to session state
     #code = pca_df.index[0]
@@ -189,4 +190,5 @@ else: # first iteration of plot generation
 st.write(code)
 st.write(pca_df)
 st.write(st.session_state.selected_points)
+st.write(st.session_state.rerun_complete)
 
