@@ -52,7 +52,7 @@ def modeling_wrapper(code, df_scaled = df_scaled):
 
 
     # apply KNN
-    knn = NearestNeighbors(n_neighbors = 4)
+    knn = NearestNeighbors(n_neighbors = 30)
     knn.fit(df_scaled)
     distances, nearest_indexes = knn.kneighbors(best_match_row)
 
@@ -143,6 +143,7 @@ selected_points = st.session_state.selected_points
 if 'code' not in st.session_state:
     st.session_state.code = None
 
+# pull code from session state
 code = st.session_state.code
 
 # setup rerun requirements
