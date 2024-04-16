@@ -147,20 +147,15 @@ if 'code' not in st.session_state:
 # pull code from session state
 code = st.session_state.code
 
-# setup rerun requirements
-# note when a new plot is generated, selected_points is reset to an empty list. to get around this we will trigger a rerun to exit out 
-# of the code and rerun with the newly obtained slected_points containing the click data.
-if 'rerun_complete' not in st.session_state:
-    st.session_state.rerun_complete = False
-
+# notes on rerun function:
+# when a the plot is clicked, plotly_events popluates the selected_points dict with the click data
+# however this click data is an output and is not yet used as input to generate a new plot
+# to get around this we will define a rerun function to allow us to skip the instance where the plot is clicked but data is not yet used so every click regenerates the plot
 def rerun():
-    if selected_points and st.session_state.rerun_complete == False: # plot has been clicked and selected_points now contains click data
-        st.rerun() # skip this iteration to regenerate the plot, retain click data in selected_points variable
-        st.session_state.rerun_complete = True # only rerun once
+    if selected_points: # only rerun after plot has been clicked, after new plot is generated selected points is empty
+        st.rerun() # skip this iteration to regenerate the plot
 
-
-st.write(st.session_state.rerun_complete)
-
+# use cache decorator to store selected_points in the session state and retain data across reruns
 @st.cache_data
 def selected_points_store(selected_points):
     st.session_state.selected_points = selected_points
@@ -183,7 +178,4 @@ else: # first iteration of plot generation
     pca_df, selected_points, code = page_layout(code = df.index[similarities_idx_sorted[0]]) # based on most similar match
     selected_points_store(selected_points)
     st.session_state.code = code # save to session state
-    rerun()# envoke a rerun
-
-
-st.write(st.session_state.rerun_complete)
+    rerun() # envoke a rerun
