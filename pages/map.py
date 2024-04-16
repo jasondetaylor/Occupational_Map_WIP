@@ -52,7 +52,7 @@ def modeling_wrapper(code, df_scaled = df_scaled):
 
 
     # apply KNN
-    knn = NearestNeighbors(n_neighbors = 30)
+    knn = NearestNeighbors(n_neighbors = 5)
     knn.fit(df_scaled)
     distances, nearest_indexes = knn.kneighbors(best_match_row)
 
@@ -71,7 +71,7 @@ def modeling_wrapper(code, df_scaled = df_scaled):
     # merge with occupation data to retrive titles and descriptions based on code index
     pca_df = pca_df.join(occupation_data)
 
-    return pca_df
+    return pca_df, code
 
 
 # 2. CREATE SCATTER PLOT    
@@ -125,7 +125,11 @@ def page_layout(code):
         selected_points = plotly_events(scatter_plot_generator(pca_df))# override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable consitently
 
     with col_list[1]:
-        occupation = pca_df.iloc[0] # first row is most similar match
+        if iteration == 1:
+            occupation = pca_df.iloc[0]
+        if iteration == 2:    
+            occupation = occupation_data.loc[code]
+            
         st.subheader(f"{occupation['Title']}") # display occupation title
         st.write(f"{occupation['Description']}") # display occupation description
 
@@ -142,7 +146,6 @@ col_list = st.columns([0.7, 0.3]) # set proportional width of cols
 # initialize session state for selected_points
 if 'selected_points' not in st.session_state:
     st.session_state.selected_points = []
-
 # pull selected_points from session state
 selected_points = st.session_state.selected_points
 
@@ -165,6 +168,7 @@ def rerun():
 @st.cache_data
 def selected_points_store(selected_points):
     st.session_state.selected_points = selected_points
+selected_points = st.session_state.selected_points
 
 if selected_points:
     # FIND BEST MATCHES BASED ON CLICK DATA
