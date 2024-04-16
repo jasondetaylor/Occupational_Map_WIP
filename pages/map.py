@@ -80,18 +80,23 @@ def modeling_wrapper(code, df_scaled = df_scaled):
 def scatter_plot_generator(pca_df):
     fig = go.Figure()
     # base plot
-    fig.add_trace(go.Scatter(x = pca_df['PCA_1'], 
-                             y = pca_df['PCA_2'], 
+    x_data = pca_df['PCA_1']
+    y_data = pca_df['PCA_2']
+    
+    fig.add_trace(go.Scatter(x = x_data, 
+                             y = y_data, 
                              mode = 'text+markers',
                              text = pca_df['Title'],
                              textposition = 'top center',
                              textfont = dict(size = 16, color = '#4DBEEE'))) # 'MATLAB blue'
 
     # remove plot features and specify plot height
+    scale_factor = 8
     fig.update_layout(xaxis = dict(showline = False,
                                    zeroline = False,
                                    showgrid = False,
-                                   showticklabels = False),
+                                   showticklabels = False,
+                                   range = [min(x_data) * scale_factor, max(x_data) * scale_factor]), # manually adjust x axis range to fit text within vounds of plot
                       yaxis = dict(showline = False,
                                    zeroline = False,
                                    showgrid = False,
@@ -99,9 +104,10 @@ def scatter_plot_generator(pca_df):
                       hovermode = 'closest',
                       paper_bgcolor = 'rgba(0,0,0,0)',
                       plot_bgcolor = 'rgba(0,0,0,0)')
-                      #height = 900) # applying here causes glitch, instead use override_height in plotly_events
+                      #height = 900) # applying here causes glitch
 
     # ISSUES: 
+    # cannot adjust plot height without causing glitvh or mishandling of click events
     # removing hover info:
     #   - applying 'hovermode = False' within update layout disables click events
     #   - applying hovertemplate = 'none' to update_traces shows no info on pop up but not disabled
