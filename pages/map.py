@@ -96,9 +96,9 @@ def scatter_plot_generator(pca_df):
                                    zeroline = False,
                                    showgrid = False,
                                    showticklabels = False),
+                      hovermode = 'closest',
                       paper_bgcolor = 'rgba(0,0,0,0)',
                       plot_bgcolor = 'rgba(0,0,0,0)')
-                      #hovermode = 'closest')
                       #height = 900) # applying here causes glitch, instead use override_height in plotly_events
 
     # ISSUES: 
@@ -113,9 +113,10 @@ def scatter_plot_generator(pca_df):
 
 # 3. POPULATE WEBPAGE
 def page_layout(code):
-    pca_df = modeling_wrapper(code) 
+    pca_df = modeling_wrapper(code)
+
     with col_list[0]:
-        selected_points = plotly_events(scatter_plot_generator(pca_df))# override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable
+        selected_points = plotly_events(scatter_plot_generator(pca_df))# override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable consitently
 
     with col_list[1]:
         occupation = pca_df.iloc[0] # first row is most similar match
@@ -165,7 +166,6 @@ def selected_points_store(selected_points):
     st.session_state.selected_points = selected_points
 
 if selected_points:
-    st.write('2nd iter')
     # FIND BEST MATCHES BASED ON CLICK DATA
     # generated df and plot
     pca_df, selected_points, code = page_layout(code) # based on id of clicked point (pull index from dict)
@@ -174,7 +174,6 @@ if selected_points:
     rerun() # envoke a rerun
 
 else: # first iteration of plot generation
-    st.write('1st iter')
     # FIND BEST MATCHES BASED ON CHECKBOX DATA
     # calculate similarities
     similarities = cosine_similarity(user_input_vector.reshape(1, -1), df) # with user input reshaped to 2d to match our df (note can use scaled or not here)
@@ -188,4 +187,3 @@ else: # first iteration of plot generation
 
 
 st.write(st.session_state.rerun_complete)
-
