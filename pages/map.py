@@ -50,9 +50,8 @@ def modeling_wrapper(code, df_scaled = df_scaled):
     #best_match_row = df_scaled.iloc[best_match_idx].values.reshape(1, -1) # convert series to array and reshape 
     best_match_row = df_scaled.loc[code].values.reshape(1, -1) # convert series to array and reshape 
 
-
     # apply KNN
-    knn = NearestNeighbors(n_neighbors = 5)
+    knn = NearestNeighbors(n_neighbors = 20)
     knn.fit(df_scaled)
     distances, nearest_indexes = knn.kneighbors(best_match_row)
 
@@ -72,7 +71,6 @@ def modeling_wrapper(code, df_scaled = df_scaled):
     pca_df = pca_df.join(occupation_data)
 
     return pca_df, code
-
 
 # 2. CREATE SCATTER PLOT    
 # attempted to use plotly click data callback, ref https://dash.plotly.com/interactive-graphing
@@ -119,17 +117,13 @@ def scatter_plot_generator(pca_df):
 
 # 3. POPULATE WEBPAGE
 def page_layout(code):
-    pca_df = modeling_wrapper(code)
+    pca_df, code = modeling_wrapper(code)
 
     with col_list[0]:
         selected_points = plotly_events(scatter_plot_generator(pca_df))# override_height = '700px') # this resizes but does not allow clicked data to be assigned to variable consitently
 
     with col_list[1]:
-        if iteration == 1:
-            occupation = pca_df.iloc[0]
-        if iteration == 2:    
-            occupation = occupation_data.loc[code]
-            
+        occupation = pca_df.iloc[0] # first row is most similar match            
         st.subheader(f"{occupation['Title']}") # display occupation title
         st.write(f"{occupation['Description']}") # display occupation description
 
