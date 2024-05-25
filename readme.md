@@ -22,9 +22,9 @@ This arm of the project is terminated with the aim of continuing or restarting b
 ### Data Source
 https://www.onetcenter.org/database.html#all-files
 ### File List
-**pages/map.py** - The streamlit script governing the map generation and regeneration after clicks.
-**Occupational Map.ipynb** - Initial Jupyter notebook used to hash out the backbone of this project used to create the plot. Namely data manipulation, dimensionality reduction and KNN/cosine similarity.
-**df.csv** - Tabular data retrived from data source given above.
-**environment.yml** - use prompt "conda env create -f environment.yml" to recreate this env on your machine to run this project.
-**streamlit_script.py** - The streamlit script for the checkbox landing page used to determine the inital best match
-**user_input_vars.csv** - The variables used to create the options on the landing page.
+- **pages/map.py** - The streamlit script governing the map generation and regeneration after clicks.
+- **Occupational Map.ipynb** - Initial Jupyter notebook used to hash out the backbone of this project used to create the plot. Namely data manipulation, dimensionality reduction and KNN/cosine similarity.
+- **df.csv** - Tabular data retrived from data source given above.
+- **environment.yml** - use prompt "conda env create -f environment.yml" to recreate this env on your machine to run this project.
+- **streamlit_script.py** - The streamlit script for the checkbox landing page used to determine the inital best match
+- **user_input_vars.csv** - The variables used to create the options on the landing page.
