@@ -7,7 +7,7 @@ By leveraging dimensionality reduction, this project explores the similarity bet
 The aim of this project is to offer an interactive platform where users can visualize the relationships between occupations, identify clusters of similar professions, and gain a deeper understanding of potential career paths. Whether you're a high school student exploring future educational opportunities, a college graduate contemplating career options, or a seasoned professional considering a career change, this project aims to empower you with valuable insights to make informed decisions about your professional journey.
 
 ## Project Issues
-Unfortunatly, I am unable to achieve the standard of UI that I would deem acceptable given my current tools and abilites. Multiple issues arising with the map/plot have forced me to reconsider the current approach to this project, namely: 
+Unfortunately, I am unable to achieve the standard of UI that I would deem acceptable given my current tools and abilites. Multiple issues arising with the map/plot have forced me to reconsider the current approach to this project, namely: 
 - Unable to adjust plot height
 - Unable to fit text inside plot borders without drastically narrowing the usable plot area
 - Unable to make text clickable, rather than the data point
@@ -17,3 +17,13 @@ The culmination of these issues that I am unable to overcome without delving int
 
 ## Conclusion
 This arm of the project is terminated with the aim of continuing or restarting by a different means that allows improved UI.
+
+## Appendices
+### Data Source
+https://www.onetcenter.org/database.html#all-files
+### File List
+pages/map.py - The streamlit script governing the map generation and regeneration after clicks.
+Occupational Map.ipynb - Initial Jupyter notebook used to hash out the backbone of this project used to create the plot. Namely data manipulation, dimensionality reduction and KNN/cosine similarity.
+df.csv - Tabular data retrived from data source given above.
+streamlit_script.py - The streamlit script for the checkbox landing page used to determine the inital best match
+user_inout_vars.csv - The variables used to create the options on the landing page.
