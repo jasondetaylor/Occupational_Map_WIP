@@ -1,4 +1,6 @@
 # Interactive Occupational Map
+## Important Note
+This porject has been temporarily halted due to UI issues, see 'Project Issues' section below for further details.
 ## Motivation
 Choosing a career path is one of the most significant decisions individuals make in their lives, often influencing their personal and professional fulfillment. This project aims to provide valuable insights and guidance to individuals, particularly students and job seekers, as they navigate the complex landscape of career choices.
 
