@@ -25,15 +25,15 @@ def random_vars(df, n):
 # select 10 random options
 user_options = random_vars(user_input_vars, 10)
 
-#print(user_options['knowledge']['Element Name'])
+# setup our user input vector to be populated by checklist selections
+user_input_vector = np.zeros(df.shape[1])
+
+#print(user_options)
 
 app = Dash()
 
 app.layout = html.Div([
-              dcc.Checklist(
-                  id = 'knowledge',
-                  options = user_options['knowledge']['Element Name']
-              )
+              dcc.Checklist(id = 'knowledge', options = user_options['knowledge']['Element Name'])
 ])
 
 
