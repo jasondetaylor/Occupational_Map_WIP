@@ -1,6 +1,6 @@
 #-------------------------------  SETUP  -------------------------------#
 # import libraries
-from dash import Dash, html, dash_table, dcc
+from dash import Dash, html, dash_table, dcc, callback, Input, Output
 import pandas as pd
 import numpy as np
 
@@ -28,13 +28,22 @@ user_options = random_vars(user_input_vars, 10)
 # setup our user input vector to be populated by checklist selections
 user_input_vector = np.zeros(df.shape[1])
 
-#print(user_options)
+print(user_options['knowledge']['Element Name'])
 
 app = Dash()
 
 app.layout = html.Div([
-              dcc.Checklist(id = 'knowledge', options = user_options['knowledge']['Element Name'])
+              dcc.Checklist(id = 'user_input', options = user_options['knowledge']['Element Name']),
+              html.Div(id = 'element_id')
 ])
+
+@callback(
+    Output(component_id='element_id', component_property='children'),
+    Input(component_id='user_input', component_property='value')
+)
+
+def update_output_div(input_value):
+    return input_value
 
 
 if __name__ == '__main__':
