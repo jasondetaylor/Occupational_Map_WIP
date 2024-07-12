@@ -39,11 +39,13 @@ app.layout = html.Div([
               html.Button('Go!', id = 'go')
 ])
 
+print(df.columns)
+print(user_options['knowledge'])
+
 #----------------------------  CALLBACK  ----------------------------#
 
 @callback(
-    #Output(component_id='user_input_vector', component_property='children'),
-    Output(component_id='element_ids', component_property = 'children'),
+    Output(component_id='user_input_vector', component_property='children'),
     Input(component_id='go', component_property='n_clicks'),
     Input(component_id='user_input', component_property='value')
     # output and input above are arguments of the callback decorator
@@ -51,12 +53,15 @@ app.layout = html.Div([
 )
 # the callback operator wraps this function below.
 # whenever the input property changes, this function is called.
-# the new input value is the argument of the function.
+# the new input values are the argument of the function.
 # dash then updates the value property of the output component with what is returned by this function
 def update_output_div(n_clicks, selected):
     if n_clicks: # if button is clicked
         element_ids = user_options['knowledge'][user_options['knowledge']['Element Name'].isin(selected)]['Element ID'] # retrieve element id's of selected options
-        return str(element_ids)
+        vector_indexes = [df.columns.get_loc((element_id, 'IM')) for element_id in element_ids] # convert the id's to indexes of matching rows in df, look only at 'Importance' metric denoted 'IM'
+        user_input_vector[vector_indexes] = 1 # set value to 1 at corresponding indexes to create vector similarity analysis
+        return str(user_input_vector)
+
     
 #-------------------------------  RUN  -------------------------------#
 
