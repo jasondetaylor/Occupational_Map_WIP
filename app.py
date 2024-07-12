@@ -59,7 +59,7 @@ def update_output_div(n_clicks, selected):
     if n_clicks: # if button is clicked
         element_ids = user_options['knowledge'][user_options['knowledge']['Element Name'].isin(selected)]['Element ID'] # retrieve element id's of selected options
         vector_indexes = [df.columns.get_loc((element_id, 'IM')) for element_id in element_ids] # convert the id's to indexes of matching rows in df, look only at 'Importance' metric denoted 'IM'
-        user_input_vector[vector_indexes] = 1 # set value to 1 at corresponding indexes to create vector similarity analysis
+        user_input_vector[vector_indexes] = 1 # set value to 1 at corresponding indexes to create vector for similarity analysis
         return str(user_input_vector)
 
     
@@ -72,5 +72,6 @@ if __name__ == '__main__':
 
 # PLAN
 # create a go button (this will be your new input property for callback decorator) - done
-# update user_inout_vector once user has finished checking boxes and clicks go (a new output property)
+# update user_inout_vector once user has finished checking boxes and clicks go (a new output property) - done
+# expand checkboxes to 2 columns, 1 for knowledge and 1 for skills
 # go to new page and display plot
