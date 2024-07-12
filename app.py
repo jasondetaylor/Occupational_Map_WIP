@@ -28,23 +28,44 @@ user_options = random_vars(user_input_vars, 10)
 # setup our user input vector to be populated by checklist selections
 user_input_vector = np.zeros(df.shape[1])
 
-print(user_options['knowledge']['Element Name'])
+#---------------------------  APP LAYOUT  ---------------------------#
 
 app = Dash()
 
 app.layout = html.Div([
               dcc.Checklist(id = 'user_input', options = user_options['knowledge']['Element Name']),
-              html.Div(id = 'element_id')
+              html.Div(id = 'user_input_vector'), # show vector for now to check output
+              html.Div(id = 'element_ids'),
+              html.Button('Go!', id = 'go')
 ])
 
+#----------------------------  CALLBACK  ----------------------------#
+
 @callback(
-    Output(component_id='element_id', component_property='children'),
+    #Output(component_id='user_input_vector', component_property='children'),
+    Output(component_id='element_ids', component_property = 'children'),
+    Input(component_id='go', component_property='n_clicks'),
     Input(component_id='user_input', component_property='value')
+    # output and input above are arguments of the callback decorator
+    # note component_id and component_property keywords are optional here
 )
-
-def update_output_div(input_value):
-    return input_value
-
+# the callback operator wraps this function below.
+# whenever the input property changes, this function is called.
+# the new input value is the argument of the function.
+# dash then updates the value property of the output component with what is returned by this function
+def update_output_div(n_clicks, selected):
+    if n_clicks: # if button is clicked
+        element_ids = user_options['knowledge'][user_options['knowledge']['Element Name'].isin(selected)]['Element ID'] # retrieve element id's of selected options
+        return str(element_ids)
+    
+#-------------------------------  RUN  -------------------------------#
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+# PLAN
+# create a go button (this will be your new input property for callback decorator) - done
+# update user_inout_vector once user has finished checking boxes and clicks go (a new output property)
+# go to new page and display plot
