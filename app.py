@@ -58,14 +58,11 @@ app.layout = html.Div([
               dcc.Location(id='url', refresh=False),  # Include dcc.Location for routing
               dcc.Store(id='user_input_vector_store'),  # Store for the user_input_vector, default zeros
               html.Div(checklist_component),
-              html.Div(id = 'user_input_vector'), # show vector for now to check output
+              html.Div(id = 'user_input_vector'),
               html.Div(id = 'element_ids'),
               html.Button('Go!', id = 'go'),
               dash.page_container
 ])
-
-#print(df.columns)
-#print(user_options['knowledge'])
 
 #----------------------------  CALLBACK  ----------------------------#
 
