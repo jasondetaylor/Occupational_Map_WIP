@@ -1,5 +1,6 @@
 #-------------------------------  SETUP  -------------------------------#
 # import libraries
+import dash
 from dash import Dash, html, dcc, callback, Input, Output, State
 import pandas as pd
 import numpy as np
@@ -39,7 +40,7 @@ user_input_vector = np.zeros(df.shape[1])
 
 #---------------------------  APP LAYOUT  ---------------------------#
 
-app = Dash()
+app = Dash(__name__, use_pages=True)
 
 checklist_component_ids = [f'user_input_{source}' for source in user_options.keys()]
 
@@ -54,10 +55,12 @@ checklist_component = [
 ]
 
 app.layout = html.Div([
+              dcc.Location(id='url', refresh=False),  # Include dcc.Location for routing
               html.Div(checklist_component),
               html.Div(id = 'user_input_vector'), # show vector for now to check output
               html.Div(id = 'element_ids'),
-              html.Button('Go!', id = 'go')
+              html.Button('Go!', id = 'go'),
+              dash.page_container
 ])
 
 #print(df.columns)
@@ -71,6 +74,7 @@ input_list.append(Input('go', "n_clicks"))
 
 @callback(
     Output(component_id='user_input_vector', component_property='children'),
+    Output('url', 'pathname'),
     *input_list # unpack list of inputs
     # output and input above are arguments of the callback decorator
     # note component_id and component_property keywords are optional here
@@ -85,18 +89,11 @@ def update_output_div(selected1, selected2, n_clicks):
         selected = selected1 + selected2
         vector_indexes = [df.columns.get_loc((id, 'IM')) for id in selected] # convert the id's to indexes of matching rows in df, look only at 'Importance' metric denoted 'IM'
         user_input_vector[vector_indexes] = 1 # set value to 1 at corresponding indexes to create vector for similarity analysis
-        return str(selected), str(user_input_vector)
+        return str(user_input_vector), '/map.py'
+    return dash.no_update # do nothing if button is not clicked
 
     
 #-------------------------------  RUN  -------------------------------#
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
-# PLAN
-# create a go button (this will be your new input property for callback decorator) - done
-# update user_inout_vector once user has finished checking boxes and clicks go (a new output property) - done
-# expand checkboxes to 2 columns, 1 for knowledge and 1 for skills
-# go to new page and display plot
