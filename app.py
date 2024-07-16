@@ -56,6 +56,7 @@ checklist_component = [
 
 app.layout = html.Div([
               dcc.Location(id='url', refresh=False),  # Include dcc.Location for routing
+              dcc.Store(id='user_input_vector_store'),  # Store for the user_input_vector, default zeros
               html.Div(checklist_component),
               html.Div(id = 'user_input_vector'), # show vector for now to check output
               html.Div(id = 'element_ids'),
@@ -73,7 +74,7 @@ input_list = [State(checklist_id, 'value') for checklist_id in checklist_compone
 input_list.append(Input('go', "n_clicks"))
 
 @callback(
-    Output(component_id='user_input_vector', component_property='children'),
+    Output('user_input_vector_store', 'data'),
     Output('url', 'pathname'),
     *input_list # unpack list of inputs
     # output and input above are arguments of the callback decorator
@@ -89,8 +90,8 @@ def update_output_div(selected1, selected2, n_clicks):
         selected = selected1 + selected2
         vector_indexes = [df.columns.get_loc((id, 'IM')) for id in selected] # convert the id's to indexes of matching rows in df, look only at 'Importance' metric denoted 'IM'
         user_input_vector[vector_indexes] = 1 # set value to 1 at corresponding indexes to create vector for similarity analysis
-        return str(user_input_vector), '/map'
-    return dash.no_update # do nothing if button is not clicked
+        return user_input_vector, '/map'
+    return dash.no_update, dash.no_update # do nothing if button is not clicked
 
     
 #-------------------------------  RUN  -------------------------------#
