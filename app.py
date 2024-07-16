@@ -1,6 +1,6 @@
 #-------------------------------  SETUP  -------------------------------#
 # import libraries
-from dash import Dash, html, dash_table, dcc, callback, Input, Output
+from dash import Dash, html, dcc, callback, Input, Output, State
 import pandas as pd
 import numpy as np
 
@@ -8,7 +8,7 @@ import numpy as np
 df = pd.read_csv('df.csv', header = [0, 1], index_col = 0) # our cleaned data
 user_input_vars = pd.read_csv('user_input_vars.csv') # our user input variables
 
-#-------------------------  DATA MANIPULATION  -------------------------#
+#-----------------------------  FUNCTIONS  -----------------------------#
 # function to pick n random elements of each source from user_input_vars
 def random_vars(df, n):
     '''takes in a dataframe and specified number of options, returns a 
@@ -22,6 +22,15 @@ def random_vars(df, n):
         random_vars_dict[source] = filtered_df.iloc[indexes].drop('Source', axis = 1) # store rows
     return random_vars_dict
 
+
+def None_type_to_list(list):
+    ''' Converts type None to empty list'''
+
+    list = list if list is not None else []
+    
+    return list
+
+#-------------------------  DATA MANIPULATION  -------------------------#
 # select 10 random options
 user_options = random_vars(user_input_vars, 10)
 
@@ -32,22 +41,37 @@ user_input_vector = np.zeros(df.shape[1])
 
 app = Dash()
 
+checklist_component_ids = [f'user_input_{source}' for source in user_options.keys()]
+
+checklist_component = [
+    html.Div([
+        dcc.Checklist(
+            id = checklist_component_ids[i], 
+            options = [{'label': row['Element Name'], 'value': row['Element ID']} for _, row in df.iterrows()] # use name as label, id as value
+        )
+    ])
+    for i, df in enumerate(user_options.values())
+]
+
 app.layout = html.Div([
-              dcc.Checklist(id = 'user_input', options = user_options['knowledge']['Element Name']),
+              html.Div(checklist_component),
               html.Div(id = 'user_input_vector'), # show vector for now to check output
               html.Div(id = 'element_ids'),
               html.Button('Go!', id = 'go')
 ])
 
-print(df.columns)
-print(user_options['knowledge'])
+#print(df.columns)
+#print(user_options['knowledge'])
 
 #----------------------------  CALLBACK  ----------------------------#
 
+# Generate a list of Input and State objects for the callback
+input_list = [State(checklist_id, 'value') for checklist_id in checklist_component_ids]
+input_list.append(Input('go', "n_clicks"))
+
 @callback(
     Output(component_id='user_input_vector', component_property='children'),
-    Input(component_id='go', component_property='n_clicks'),
-    Input(component_id='user_input', component_property='value')
+    *input_list # unpack list of inputs
     # output and input above are arguments of the callback decorator
     # note component_id and component_property keywords are optional here
 )
@@ -55,12 +79,13 @@ print(user_options['knowledge'])
 # whenever the input property changes, this function is called.
 # the new input values are the argument of the function.
 # dash then updates the value property of the output component with what is returned by this function
-def update_output_div(n_clicks, selected):
+def update_output_div(selected1, selected2, n_clicks):
     if n_clicks: # if button is clicked
-        element_ids = user_options['knowledge'][user_options['knowledge']['Element Name'].isin(selected)]['Element ID'] # retrieve element id's of selected options
-        vector_indexes = [df.columns.get_loc((element_id, 'IM')) for element_id in element_ids] # convert the id's to indexes of matching rows in df, look only at 'Importance' metric denoted 'IM'
+        selected1, selected2 = None_type_to_list(selected1), None_type_to_list(selected2) # convert to empty list if no options from that list are checked
+        selected = selected1 + selected2
+        vector_indexes = [df.columns.get_loc((id, 'IM')) for id in selected] # convert the id's to indexes of matching rows in df, look only at 'Importance' metric denoted 'IM'
         user_input_vector[vector_indexes] = 1 # set value to 1 at corresponding indexes to create vector for similarity analysis
-        return str(user_input_vector)
+        return str(selected), str(user_input_vector)
 
     
 #-------------------------------  RUN  -------------------------------#
