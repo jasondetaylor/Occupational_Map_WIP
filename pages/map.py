@@ -70,7 +70,7 @@ def modeling_wrapper(code, df_scaled):
     # merge with occupation data to retrive titles and descriptions based on code index
     pca_df = pca_df.join(occupation_data)
 
-    return pca_df#, code
+    return pca_df
 
 def map_display(pca_df, code):
     fig = px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2', text = 'Title')
@@ -87,7 +87,7 @@ dash.register_page(__name__, path = '/map')
 
 layout = html.Div([
     html.H1('Map'),
-    html.Div(id = 'code'),
+#    html.Div(id = 'code'),
     dcc.Graph(id = 'map'),
     html.Div(id = 'title'),
     html.Div(id = 'description'),
@@ -96,7 +96,7 @@ layout = html.Div([
 ])
 
 @callback(
-    Output('code', 'children'),
+    #Output('code', 'children'),
     Output('pca_data', 'data'),
     Output('map', 'figure'),
     Output('title', 'children'),
@@ -109,13 +109,13 @@ layout = html.Div([
 def display_map(user_input_vector, clickData, pca_data):
 
     if user_input_vector is None: # do nothing until initial input is recieved
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     elif clickData is None: # first iteration, checklist generated
         code = find_similarities(user_input_vector, df)
         pca_df = modeling_wrapper(code, df_scaled)
         fig, title, description = map_display(pca_df, code)
-        return code, pca_df.to_json(), fig, title, description
+        return pca_df.to_json(), fig, title, description
 
     elif clickData is not None: # 2nd -> nth iteration, uses click data
         click_dict = json.loads(json.dumps(clickData, indent=2)) # convert from str back to dict using json.loads
@@ -123,4 +123,4 @@ def display_map(user_input_vector, clickData, pca_data):
         new_code = pca_df.index[click_dict['points'][0]['pointIndex']] # retrieve code using point index
         new_pca_df = modeling_wrapper(new_code, df_scaled)
         new_fig, new_title, new_description = map_display(new_pca_df, new_code)
-        return new_code, new_pca_df.to_json(), new_fig, new_title, new_description
+        return new_pca_df.to_json(), new_fig, new_title, new_description
