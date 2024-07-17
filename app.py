@@ -40,14 +40,13 @@ user_input_vector = np.zeros(df.shape[1])
 
 app = Dash(__name__, use_pages=True)
 
-checklist_component_ids = [f'user_input_{source}' for source in user_options.keys()]
-column_width = 100 / len(checklist_component_ids) # calculate width percentage to pass to style in checklist to define number of columns
+column_width = 100 / len(user_options.keys()) # calculate width percentage to pass to style in checklist to define number of columns
 
 checklist_component = [
     html.Div([
         html.H3(source),
         dcc.Checklist(
-            id = checklist_component_ids[i], 
+            id = f'user_input_{source}', 
             options = [{'label': row['Element Name'], 'value': row['Element ID']} for _, row in df.iterrows()] # use name as label, id as value
         )
     ], style={'width': f'{column_width}%', 'display': 'inline-block'}) # dynamic col setup, 1 col for each source
@@ -60,8 +59,6 @@ app.layout = html.Div([
               html.H2('Select options that resonate with you from the list below:'),
               html.Plaintext('The more options selected, the more accurate the intial match'),
               html.Div(checklist_component),
-              html.Div(id = 'user_input_vector'),
-              html.Div(id = 'element_ids'),
               html.Button('Go!', id = 'go'),
               dash.page_container
 ])
@@ -69,8 +66,9 @@ app.layout = html.Div([
 #----------------------------  CALLBACK  ----------------------------#
 
 # Generate a list of Input and State objects for the callback
-input_list = [State(checklist_id, 'value') for checklist_id in checklist_component_ids]
-input_list.append(Input('go', "n_clicks"))
+checklist_component_ids = [comp.children[1].id for comp in checklist_component] # extract IDs from checklist_component
+input_list = [State(checklist_id, 'value') for checklist_id in checklist_component_ids] # generate list State objects for the callback
+input_list.append(Input('go', "n_clicks")) # add in go button input
 
 @callback(
     Output('user_input_vector_store', 'data'),
