@@ -5,6 +5,7 @@ from dash import html, callback, dcc, Input, Output
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import json
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
@@ -80,7 +81,8 @@ layout = html.Div([
     html.Div(id = 'code'),
     dcc.Graph(id = 'map'),
     html.Div(id = 'title'),
-    html.Div(id = 'description')
+    html.Div(id = 'description'),
+    html.Div(id = 'click-data')
 ])
 
 @callback(
@@ -96,7 +98,14 @@ def display_vector(user_input_vector):
         code = find_similarities(user_input_vector, df)
         pca_df = modeling_wrapper(code, df_scaled)
         fig = px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2')
+        fig.update_layout(clickmode='event+select')
         title = occupation_data.loc[code]['Title']
         description = occupation_data.loc[code]['Description']
         return code, fig, title, description
     return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+@callback(
+    Output('click-data', 'children'),
+    Input('map', 'clickData'))
+def display_click_data(clickData):
+    return json.dumps(clickData, indent=2)
