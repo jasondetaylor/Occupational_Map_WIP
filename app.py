@@ -26,9 +26,7 @@ def random_vars(df, n):
 
 def None_type_to_list(list):
     ''' Converts type None to empty list'''
-
     list = list if list is not None else []
-    
     return list
 
 #-------------------------  DATA MANIPULATION  -------------------------#
@@ -44,13 +42,15 @@ app = Dash(__name__, use_pages=True)
 
 checklist_component_ids = [f'user_input_{source}' for source in user_options.keys()]
 
+column_width = 100 / len(checklist_component_ids) # calculate width percentage to pass to style in checklist to define number of columns
+
 checklist_component = [
     html.Div([
         dcc.Checklist(
             id = checklist_component_ids[i], 
             options = [{'label': row['Element Name'], 'value': row['Element ID']} for _, row in df.iterrows()] # use name as label, id as value
         )
-    ])
+    ], style={'width': f'{column_width}%', 'display': 'inline-block'}) # dynamic col setup, 1 col for each source
     for i, df in enumerate(user_options.values())
 ]
 
@@ -75,17 +75,13 @@ input_list.append(Input('go', "n_clicks"))
     Output('url', 'pathname'),
     *input_list # unpack list of inputs
 )
-# the callback operator wraps this function below.
-# whenever the input property changes, this function is called.
-# the new input values are the argument of the function.
-# dash then updates the value property of the output component with what is returned by this function
 def update_output_div(selected1, selected2, n_clicks):
     if n_clicks: # if button is clicked
         selected1, selected2 = None_type_to_list(selected1), None_type_to_list(selected2) # convert to empty list if no options from that list are checked
         selected = selected1 + selected2
         vector_indexes = [df.columns.get_loc((id, 'IM')) for id in selected] # convert the id's to indexes of matching rows in df, look only at 'Importance' metric denoted 'IM'
         user_input_vector[vector_indexes] = 1 # set value to 1 at corresponding indexes to create vector for similarity analysis
-        return np.array(user_input_vector), '/map'
+        return user_input_vector, '/map'
     return dash.no_update, dash.no_update # do nothing if button is not clicked
 
     
