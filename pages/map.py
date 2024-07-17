@@ -72,6 +72,15 @@ def modeling_wrapper(code, df_scaled):
 
     return pca_df#, code
 
+def map_display(pca_df, code):
+    fig = px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2', text = 'Title')
+    fig.update_layout(clickmode='event+select')
+    title = pca_df.loc[code]['Title']
+    description = pca_df.loc[code]['Description']
+
+    return fig, title, description
+
+
 #-----------------------------  PAGE SETUP  ------------------------------#
 
 dash.register_page(__name__, path = '/map')
@@ -82,39 +91,44 @@ layout = html.Div([
     dcc.Graph(id = 'map'),
     html.Div(id = 'title'),
     html.Div(id = 'description'),
-    html.Div(id = 'click-data'),
-    dcc.Store(id = 'pca_data') # store data to pass to click data callback
+    html.Div(id = 'click-data')
 ])
 
 @callback(
     Output('code', 'children'),
-    Output('pca_data', 'data'),
     Output('map', 'figure'),
     Output('title', 'children'),
     Output('description', 'children'),
-    Input('user_input_vector_store', 'data')  # Listen for data changes
+    Input('user_input_vector_store', 'data'),  # Listen for data changes
+    Input('map', 'clickData') 
 )
 
-def display_vector(user_input_vector):
+def display_map(user_input_vector, clickData):
     if user_input_vector is not None:
         code = find_similarities(user_input_vector, df)
         pca_df = modeling_wrapper(code, df_scaled)
-        fig = px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2')
-        fig.update_layout(clickmode='event+select')
-        title = occupation_data.loc[code]['Title']
-        description = occupation_data.loc[code]['Description']
-        return code, pca_df.to_json(), fig, title, description # note pca_df converted to json to pass to store
-    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        fig, title, description = map_display(pca_df, code)
 
-@callback(
-    Output('click-data', 'children'),
-    Input('map', 'clickData'),
-    Input('pca_data', 'data') # retrieve pca data
-    )
-def display_click_data(clickData, pca_data):
-    if clickData is not None:
-        click_dict = json.loads(json.dumps(clickData, indent=2)) # convert from str back to dict using json.loads
-        pca_df = pd.read_json(pca_data) # convert back to df
-        code = pca_df.index[click_dict['points'][0]['pointIndex']] # reteieve code using point index
-        return code
-    return dash.no_update
+        if clickData is not None:
+            click_dict = json.loads(json.dumps(clickData, indent=2)) # convert from str back to dict using json.loads
+            new_code = pca_df.index[click_dict['points'][0]['pointIndex']] # retrieve code using point index
+            new_pca_df = modeling_wrapper(code, df_scaled)
+            fig, title, description = map_display(new_pca_df, new_code)
+    
+        return code, fig, title, description
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+# @callback(
+#     Output('map', 'figure'), # update plot
+#     Input('map', 'clickData'),
+#     Input('pca_data', 'data') # retrieve pca data
+#     )
+# def display_click_data(clickData, pca_data):
+#     if clickData is not None:
+#         click_dict = json.loads(json.dumps(clickData, indent=2)) # convert from str back to dict using json.loads
+#         pca_df = pd.read_json(pca_data) # convert back to df
+#         code = pca_df.index[click_dict['points'][0]['pointIndex']] # reteieve code using point index
+#         new_pca_df = modeling_wrapper(code, df_scaled)
+#         new_fig = px.scatter(new_pca_df, x='PCA_1', y='PCA_2')
+#         return new_fig
+#     return dash.no_update
