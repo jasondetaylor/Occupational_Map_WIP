@@ -74,7 +74,11 @@ def modeling_wrapper(code, df_scaled):
 
 def map_display(pca_df, code):
     fig = px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2', text = 'Title')
-    fig.update_layout(clickmode='event+select')
+    fig.update_layout(clickmode = 'event+select',
+                      xaxis_title = '', 
+                      yaxis_title = '',
+                      xaxis = dict(showticklabels = False),
+                      yaxis = dict(showticklabels = False))
     title = pca_df.loc[code]['Title']
     description = pca_df.loc[code]['Description']
 
@@ -87,7 +91,6 @@ dash.register_page(__name__, path = '/map')
 
 layout = html.Div([
     html.H1('Map'),
-#    html.Div(id = 'code'),
     dcc.Graph(id = 'map'),
     html.Div(id = 'title'),
     html.Div(id = 'description'),
@@ -96,7 +99,6 @@ layout = html.Div([
 ])
 
 @callback(
-    #Output('code', 'children'),
     Output('pca_data', 'data'),
     Output('map', 'figure'),
     Output('title', 'children'),
