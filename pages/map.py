@@ -77,13 +77,17 @@ dash.register_page(__name__, path = '/map')
 
 layout = html.Div([
     html.H1('Map'),
-    html.Div(id = 'similarities'),
-    dcc.Graph(id = 'map')
+    html.Div(id = 'code'),
+    dcc.Graph(id = 'map'),
+    html.Div(id = 'title'),
+    html.Div(id = 'description')
 ])
 
 @callback(
-    Output('similarities', 'children'),
+    Output('code', 'children'),
     Output('map', 'figure'),
+    Output('title', 'children'),
+    Output('description', 'children'),
     Input('user_input_vector_store', 'data')  # Listen for data changes
 )
 
@@ -92,5 +96,7 @@ def display_vector(user_input_vector):
         code = find_similarities(user_input_vector, df)
         pca_df = modeling_wrapper(code, df_scaled)
         fig = px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2')
-        return code, fig
-    return dash.no_update, dash.no_update
+        title = occupation_data.loc[code]['Title']
+        description = occupation_data.loc[code]['Description']
+        return code, fig, title, description
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update
