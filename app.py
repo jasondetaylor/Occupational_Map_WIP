@@ -41,22 +41,24 @@ user_input_vector = np.zeros(df.shape[1])
 app = Dash(__name__, use_pages=True)
 
 checklist_component_ids = [f'user_input_{source}' for source in user_options.keys()]
-
 column_width = 100 / len(checklist_component_ids) # calculate width percentage to pass to style in checklist to define number of columns
 
 checklist_component = [
     html.Div([
+        html.H3(source),
         dcc.Checklist(
             id = checklist_component_ids[i], 
             options = [{'label': row['Element Name'], 'value': row['Element ID']} for _, row in df.iterrows()] # use name as label, id as value
         )
     ], style={'width': f'{column_width}%', 'display': 'inline-block'}) # dynamic col setup, 1 col for each source
-    for i, df in enumerate(user_options.values())
+    for i, (source, df) in enumerate(user_options.items())
 ]
 
 app.layout = html.Div([
               dcc.Location(id = 'url', refresh = False),  # Include dcc.Location for routing
               dcc.Store(id = 'user_input_vector_store'),  # Store for the user_input_vector
+              html.H2('Select options that resonate with you from the list below:'),
+              html.Plaintext('The more options selected, the more accurate the intial match'),
               html.Div(checklist_component),
               html.Div(id = 'user_input_vector'),
               html.Div(id = 'element_ids'),
