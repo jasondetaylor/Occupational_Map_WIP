@@ -89,11 +89,19 @@ def map_display(pca_df, code):
 
 dash.register_page(__name__, path = '/map')
 
+# edit this parameter to change relative plot width (%)
+plot_width = 80
+
 layout = html.Div([
-    html.H1('Map'),
-    dcc.Graph(id = 'map'),
-    html.Div(id = 'title'),
-    html.Div(id = 'description'),
+    html.Div([
+        html.Div(
+            dcc.Graph(id = 'map'),
+            style={'width': f'{plot_width}%', 'display': 'inline-block', 'verticalAlign': 'top'}),
+        html.Div([
+            html.Div(id = 'title'),
+            html.Div(id = 'description'),
+        ], style={'width': f'{100 - plot_width}%', 'display': 'inline-block', 'verticalAlign': 'top'})
+        ], style={'display': 'flex'}),
     html.Div(id = 'click-data'),
     dcc.Store(id = 'pca_data'), # store previous pca_df
 ])
