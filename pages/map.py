@@ -82,11 +82,13 @@ layout = html.Div([
     dcc.Graph(id = 'map'),
     html.Div(id = 'title'),
     html.Div(id = 'description'),
-    html.Div(id = 'click-data')
+    html.Div(id = 'click-data'),
+    dcc.Store(id = 'pca_data') # store data to pass to click data callback
 ])
 
 @callback(
     Output('code', 'children'),
+    Output('pca_data', 'data'),
     Output('map', 'figure'),
     Output('title', 'children'),
     Output('description', 'children'),
@@ -101,11 +103,18 @@ def display_vector(user_input_vector):
         fig.update_layout(clickmode='event+select')
         title = occupation_data.loc[code]['Title']
         description = occupation_data.loc[code]['Description']
-        return code, fig, title, description
-    return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return code, pca_df.to_json(), fig, title, description # note pca_df converted to json to pass to store
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 @callback(
     Output('click-data', 'children'),
-    Input('map', 'clickData'))
-def display_click_data(clickData):
-    return json.dumps(clickData, indent=2)
+    Input('map', 'clickData'),
+    Input('pca_data', 'data') # retrieve pca data
+    )
+def display_click_data(clickData, pca_data):
+    if clickData is not None:
+        click_dict = json.loads(json.dumps(clickData, indent=2)) # convert from str back to dict using json.loads
+        pca_df = pd.read_json(pca_data) # convert back to df
+        code = pca_df.index[click_dict['points'][0]['pointIndex']] # reteieve code using point index
+        return code
+    return dash.no_update
