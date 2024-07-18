@@ -17,24 +17,32 @@ df = pd.read_csv('df.csv', header = [0, 1], index_col = 0) # our cleaned data
 occupation_data = pd.read_excel('db_28_2_excel/Occupation Data.xlsx')
 occupation_data.set_index('O*NET-SOC Code', inplace = True) # set code as index to match pca_df to match previous df
 
-#------------------------------  SCALING  -------------------------------#
-# scale
-scaler = RobustScaler()
-df_scaled = scaler.fit_transform(df)
+# note: should I be accessing df using dcc.Store from landing page instead of re-loading here?
 
-# convert back to df
-df_scaled = pd.DataFrame(df_scaled, columns = df.columns, index = df.index)
+#------------------------------  SCALING  -------------------------------#
+
+# Choose robust scaler to reduce the effect that outliers may have on our PCA vectors
+scaler = RobustScaler() # instantiate
+df_scaled = scaler.fit_transform(df) # fit
+df_scaled = pd.DataFrame(df_scaled, columns = df.columns, index = df.index) # convert back to df
 
 #-----------------------------  FUNCTIONS  ------------------------------#
-# FIND BEST MATCHES BASED ON CHECKBOX DATA
-def find_similarities(user_input_vector, df):
-    # calculate similarities
-    user_input_vector = np.array(user_input_vector) # convert from list to array
-    similarities = cosine_similarity(user_input_vector.reshape(1, -1), df) # with user input reshaped to 2d to match our df (note can use scaled or not here)
-    # sort occupations by similarity
-    similarities_idx_sorted = np.argsort(similarities).flatten() # sort indexes from most to least similar in array form
-    best_match_code = df.iloc[similarities_idx_sorted[0]].name # retrieve best match code
-    return best_match_code# output best match code
+
+# APPLY KNN TO FIND NEAREST NEIGHBORS
+def apply_KNN(row, n_neighbors, df):
+    knn = NearestNeighbors(n_neighbors = n_neighbors)
+    knn.fit(df)
+    distances, nearest_indexes = knn.kneighbors(row)
+    most_similar_data = df.iloc[nearest_indexes.flatten()]
+    return most_similar_data
+
+# USE CHECKBOX DATA TO FIND BEST MATCH OCCUPATION
+def find_best_match(selected_codes, df_scaled):
+    df_filtered = df_scaled[selected_codes] # filter df down to only columns matching user selection
+    user_input = np.array(df_filtered.max(axis = 0)).reshape(1, -1) # create data point using max value of each col
+    best_match_row = apply_KNN(row = user_input, n_neighbors = 1, df = df_filtered) # apply KNN to find closest neighbor
+    best_match_code = best_match_row.index # retrieve code
+    return best_match_code
 
 
 # FIND NEAREST NEIGHBORS TO OCCUPATION
@@ -46,17 +54,9 @@ def modeling_wrapper(code, df_scaled):
     on KNN calculation. '''
     # 1A. FIND MOST SIMILAR BASED ON DISTANCES USING KNN
     # select row
-    # here is the issue, we are taking the index from our plot and applying it to df_scaled, try and get code from plot instead
-    #best_match_row = df_scaled.iloc[best_match_idx].values.reshape(1, -1) # convert series to array and reshape 
     best_match_row = df_scaled.loc[code].values.reshape(1, -1) # convert series to array and reshape 
-
     # apply KNN
-    knn = NearestNeighbors(n_neighbors = 20)
-    knn.fit(df_scaled)
-    distances, nearest_indexes = knn.kneighbors(best_match_row)
-
-    # apply filtering
-    most_similar_data = df.iloc[nearest_indexes.flatten()]
+    most_similar_data = apply_KNN(row = best_match_row, n_neighbors = 20, df = df_scaled)
 
     # 1B. APPLY PCA
     # dimensionality reduction
@@ -72,6 +72,7 @@ def modeling_wrapper(code, df_scaled):
 
     return pca_df
 
+# GENERATE SCATTER PLOT
 def map_display(pca_df, code):
     fig = px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2', text = 'Title')
     fig.update_layout(clickmode = 'event+select',
@@ -102,7 +103,6 @@ layout = html.Div([
             html.Div(id = 'description'),
         ], style={'width': f'{100 - plot_width}%', 'display': 'inline-block', 'verticalAlign': 'top'})
         ], style={'display': 'flex'}),
-    html.Div(id = 'click-data'),
     dcc.Store(id = 'pca_data'), # store previous pca_df
 ])
 
@@ -111,18 +111,18 @@ layout = html.Div([
     Output('map', 'figure'),
     Output('title', 'children'),
     Output('description', 'children'),
-    Input('user_input_vector_store', 'data'),  # Listen for data changes
+    Input('selected_codes', 'data'),  # Listen for data changes
     Input('map', 'clickData'),
     Input('pca_data', 'data') # retrieve pca data
 )
 
-def display_map(user_input_vector, clickData, pca_data):
+def display_map(selected_codes, clickData, pca_data):
 
-    if user_input_vector is None: # do nothing until initial input is recieved
+    if selected_codes is None: # do nothing until initial input is recieved
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     elif clickData is None: # first iteration, checklist generated
-        code = find_similarities(user_input_vector, df)
+        code = find_best_match(selected_codes, df_scaled)
         pca_df = modeling_wrapper(code, df_scaled)
         fig, title, description = map_display(pca_df, code)
         return pca_df.to_json(), fig, title, description
