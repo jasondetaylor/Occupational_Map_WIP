@@ -140,6 +140,8 @@ def display_map(selected_codes, clickData, pca_data):
     #   - edit theme
     # Map:
     #   - make fullscreen
+    #   - remove hover info
+    #   - color current occupation differently
     #   - edit axes to not cut off text data
     #   - disallow text overlap
     #   - make text clickabe, not just data point
