@@ -55,7 +55,7 @@ checklist_component = [
 
 app.layout = html.Div([
               dcc.Location(id = 'url', refresh = False),  # Include dcc.Location for routing
-              dcc.Store(id = 'user_input_vector_store'),  # Store for the user_input_vector
+              dcc.Store(id = 'selected_codes'),  # Store for the checlist selection to pass to map page
               html.H2('Select options that resonate with you from the list below:'),
               html.Plaintext('The more options selected, the more accurate the intial match'),
               html.Div(checklist_component),
@@ -71,7 +71,7 @@ input_list = [State(checklist_id, 'value') for checklist_id in checklist_compone
 input_list.append(Input('go', "n_clicks")) # add in go button input
 
 @callback(
-    Output('user_input_vector_store', 'data'),
+    Output('selected_codes', 'data'),
     Output('url', 'pathname'),
     *input_list # unpack list of inputs
 )
@@ -79,11 +79,7 @@ def update_output_div(selected1, selected2, n_clicks):
     if n_clicks: # if button is clicked
         selected1, selected2 = None_type_to_list(selected1), None_type_to_list(selected2) # convert to empty list if no options from that list are checked
         selected = selected1 + selected2
-        vector_indexes_IM = [df.columns.get_loc((id, 'IM')) for id in selected] # convert the id's to indexes of matching rows in df, look only at 'Importance' metric denoted 'IM'
-        vector_indexes_LV = [df.columns.get_loc((id, 'LV')) for id in selected] # convert the id's to indexes of matching rows in df, look only at 'Importance' metric denoted 'LV'
-        #user_input_vector[vector_indexes] = 1 # set value to 1 at corresponding indexes to create vector for similarity analysis
-        user_input_vector[np.concatenate((vector_indexes_IM, vector_indexes_LV))] = 1
-        return user_input_vector, '/map'
+        return selected, '/map'
     return dash.no_update, dash.no_update # do nothing if button is not clicked
 
 #-------------------------------  RUN  -------------------------------#
