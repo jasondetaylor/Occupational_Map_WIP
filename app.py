@@ -82,7 +82,7 @@ def update_output_div(selected1, selected2, n_clicks):
         vector_indexes_IM = [df.columns.get_loc((id, 'IM')) for id in selected] # convert the id's to indexes of matching rows in df, look only at 'Importance' metric denoted 'IM'
         vector_indexes_LV = [df.columns.get_loc((id, 'LV')) for id in selected] # convert the id's to indexes of matching rows in df, look only at 'Importance' metric denoted 'LV'
         #user_input_vector[vector_indexes] = 1 # set value to 1 at corresponding indexes to create vector for similarity analysis
-        user_input_vector[np.concatenate((vector_indexes_IM, vector_indexes_LV))]
+        user_input_vector[np.concatenate((vector_indexes_IM, vector_indexes_LV))] = 1
         return user_input_vector, '/map'
     return dash.no_update, dash.no_update # do nothing if button is not clicked
 
