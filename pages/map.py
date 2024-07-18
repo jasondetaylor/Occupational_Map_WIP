@@ -99,7 +99,7 @@ layout = html.Div([
             dcc.Graph(id = 'map'),
             style={'width': f'{plot_width}%', 'display': 'inline-block', 'verticalAlign': 'top'}),
         html.Div([
-            html.Div(id = 'title'),
+            html.H3(id = 'title'),
             html.Div(id = 'description'),
         ], style={'width': f'{100 - plot_width}%', 'display': 'inline-block', 'verticalAlign': 'top'})
         ], style={'display': 'flex'}),
@@ -134,3 +134,15 @@ def display_map(selected_codes, clickData, pca_data):
         new_pca_df = modeling_wrapper(new_code, df_scaled)
         new_fig, new_title, new_description = map_display(new_pca_df, new_code)
         return new_pca_df.to_json(), new_fig, new_title, new_description
+    
+    # To Do List
+    # General:
+    #   - edit theme
+    # Map:
+    #   - make fullscreen
+    #   - edit axes to not cut off text data
+    #   - disallow text overlap
+    #   - make text clickabe, not just data point
+    #   - add a go back button
+    # Landing Page:
+    #   - maybe: append selected options to a list, replace selected with new option, add refresh button to regenerate lists
