@@ -81,10 +81,18 @@ def update_output_div(selected1, selected2, n_clicks):
         selected = selected1 + selected2
         vector_indexes = [df.columns.get_loc((id, 'IM')) for id in selected] # convert the id's to indexes of matching rows in df, look only at 'Importance' metric denoted 'IM'
         user_input_vector[vector_indexes] = 1 # set value to 1 at corresponding indexes to create vector for similarity analysis
+
+        # check to make sure selected options are being translated correctly:
+        print([i for i, value in enumerate(user_input_vector) if value == 1]) # selected indexes
+        print(vector_indexes)
+        selected_codes = [code_only for (code_only, IM) in [df.columns[idx] for idx in vector_indexes]] # pull out df col headers, less IM
+        print(selected_codes)
+        titles = user_input_vars.loc[user_input_vars['Element ID'].isin(selected_codes), 'Element Name']
+        print(titles)
+
         return user_input_vector, '/map'
     return dash.no_update, dash.no_update # do nothing if button is not clicked
 
-    
 #-------------------------------  RUN  -------------------------------#
 
 if __name__ == '__main__':
