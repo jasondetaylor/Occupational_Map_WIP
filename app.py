@@ -2,6 +2,7 @@
 # import libraries
 import dash
 from dash import Dash, html, dcc, callback, Input, Output, State
+import dash_bootstrap_components as dbc
 import pandas as pd
 import numpy as np
 
@@ -38,7 +39,7 @@ user_input_vector = np.zeros(df.shape[1])
 
 #---------------------------  APP LAYOUT  ---------------------------#
 
-app = Dash(__name__, use_pages=True)
+app = Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.MINTY])
 
 column_width = 100 / len(user_options.keys()) # calculate width percentage to pass to style in checklist to define number of columns
 
