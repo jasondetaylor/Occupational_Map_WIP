@@ -89,7 +89,8 @@ def map_display(pca_df, code):
                       plot_bgcolor='rgba(0,0,0,0)',
                       height = 750,
                       margin = dict(l=0, r=0)) # remove only side margins
-    #fig.update_traces(hoverinfo = 'none') # unsure why hover data is still present, remove for now
+    fig.update_traces(textposition='top center')
+                      #hoverinfo = 'none') # unsure why hover data is still present, remove for now
     title = pca_df.loc[code]['Title']
     description = pca_df.loc[code]['Description']
 
