@@ -52,13 +52,13 @@ def modeling_wrapper(code, df_scaled):
     ''' takes in the a specified number of points and a best matched occupation index. returns a dataframe of 
     pca dimsensions with occupation details of n number of closest occupations to user input based 
     on KNN calculation. '''
-    # 1A. FIND MOST SIMILAR BASED ON DISTANCES USING KNN
+    # FIND MOST SIMILAR BASED ON DISTANCES USING KNN
     # select row
     best_match_row = df_scaled.loc[code].values.reshape(1, -1) # convert series to array and reshape 
     # apply KNN
     most_similar_data = apply_KNN(row = best_match_row, n_neighbors = 20, df = df_scaled)
 
-    # 1B. APPLY PCA
+    # APPLY PCA
     # dimensionality reduction
     pca = PCA(n_components = 2)
     reduced_data = pca.fit_transform(most_similar_data)
@@ -66,7 +66,7 @@ def modeling_wrapper(code, df_scaled):
     # convert back to dataframe
     pca_df = pd.DataFrame(data = reduced_data, columns = ['PCA_1', 'PCA_2'], index = most_similar_data.index)
 
-    # 1C. CREATE DATAFRAME TO PASS TO PLOT
+    # CREATE DATAFRAME TO PASS TO PLOT
     # merge with occupation data to retrive titles and descriptions based on code index
     pca_df = pca_df.join(occupation_data)
 
@@ -75,11 +75,21 @@ def modeling_wrapper(code, df_scaled):
 # GENERATE SCATTER PLOT
 def map_display(pca_df, code):
     fig = px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2', text = 'Title')
+    scale_factor = 1.5 # adjust this variable for axis limits to limit text cut off
     fig.update_layout(clickmode = 'event+select',
                       xaxis_title = '', 
                       yaxis_title = '',
-                      xaxis = dict(showticklabels = False),
-                      yaxis = dict(showticklabels = False))
+                      xaxis = dict(showticklabels = False,
+                                   showgrid = False,
+                                   showline = False,
+                                   range = [pca_df['PCA_1'].max()*scale_factor, pca_df['PCA_1'].min()*scale_factor]), # custom x-axis adjust to fit text within plot bounds
+                      yaxis = dict(showticklabels = False,
+                                   showgrid = False,
+                                   showline = False),
+                      plot_bgcolor='rgba(0,0,0,0)',
+                      height = 750,
+                      margin = dict(l=0, r=0)) # remove only side margins
+    #fig.update_traces(hoverinfo = 'none') # unsure why hover data is still present, remove for now
     title = pca_df.loc[code]['Title']
     description = pca_df.loc[code]['Description']
 
