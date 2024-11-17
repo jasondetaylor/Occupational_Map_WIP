@@ -9,7 +9,7 @@ import json
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
-from sklearn.metrics.pairwise import cosine_similarity
+# from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import NearestNeighbors
 
 # re-read in df and occupation data df
@@ -72,9 +72,30 @@ def modeling_wrapper(code, df_scaled):
 
     return pca_df
 
+def redact_text(text, max_characters = 40):
+    if len(text) > max_characters:
+        return text[:max_characters - 3] + "..." # redact and add ellipses if over character limit
+    else:
+        return text # do nothing if text under character limit
+
+# EDIT pca_df DATA TO AVOID TEXT OVERLAP IN PLOT
+def avoid_text_overlap(pca_df, plot_height, vertical_text_padding = 1.05):
+    # 1. y-axis
+    # determine y-axis units needed to achieve optimal vertical text separation (text height is 12 pixels)
+    axis_text_height = (12/plot_height)*(pca_df['PCA_2'].max() - pca_df['PCA_2'].min()) # note we are not including padding on plot here so the df can be edited before plot is generated
+    separation = axis_text_height*vertical_text_padding
+
+    # shorten string to set length
+    pca_df['Redacted_Title'] = pca_df['Title'].apply(redact_text)
+
+    # apply clustering using a DBSCAN like algorithm.
+    # note we cannot use BDSCAN here is we need to find clusters by looking at both x and y distance, DBSCAN ony searches via a singe euclidian distance
+
+    return pca_df
+
 # GENERATE SCATTER PLOT
-def map_display(pca_df, code):
-    fig = px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2', text = 'Title')
+def map_display(pca_df, code, plot_height):
+    fig = px.scatter(pca_df, x = 'PCA_1', y = 'PCA_2', text = 'Redacted_Title')
     scale_factor = 1.5 # adjust this variable for axis limits to limit text cut off
     fig.update_layout(clickmode = 'event+select',
                       xaxis_title = '', 
@@ -87,7 +108,7 @@ def map_display(pca_df, code):
                                    showgrid = False,
                                    showline = False),
                       plot_bgcolor='rgba(0,0,0,0)',
-                      height = 750,
+                      height = plot_height,
                       margin = dict(l=0, r=0)) # remove only side margins
     fig.update_traces(textposition='top center')
                       #hoverinfo = 'none') # unsure why hover data is still present, remove for now
@@ -103,6 +124,7 @@ dash.register_page(__name__, path = '/map')
 
 # edit this parameter to change relative plot width (%)
 plot_width = 80
+plot_height = 750
 
 layout = html.Div([
     html.Div([
@@ -114,7 +136,7 @@ layout = html.Div([
             html.Div(id = 'description'),
         ], style={'width': f'{100 - plot_width}%', 'display': 'inline-block', 'verticalAlign': 'top'})
         ], style={'display': 'flex'}),
-    dcc.Store(id = 'pca_data'), # store previous pca_df
+    dcc.Store(id = 'pca_data') # store previous pca_df
 ])
 
 @callback(
@@ -130,12 +152,13 @@ layout = html.Div([
 def display_map(selected_codes, clickData, pca_data):
 
     if selected_codes is None: # do nothing until initial input is recieved
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return (*[dash.no_update] * 4,)
 
     elif clickData is None: # first iteration, checklist generated
         code = find_best_match(selected_codes, df_scaled)
         pca_df = modeling_wrapper(code, df_scaled)
-        fig, title, description = map_display(pca_df, code)
+        pca_df = avoid_text_overlap(pca_df, plot_height, vertical_text_padding = 1.05)
+        fig, title, description = map_display(pca_df, code, plot_height = 700)
         return pca_df.to_json(), fig, title, description
 
     elif clickData is not None: # 2nd -> nth iteration, uses click data
@@ -143,7 +166,8 @@ def display_map(selected_codes, clickData, pca_data):
         pca_df = pd.read_json(pca_data)
         new_code = pca_df.index[click_dict['points'][0]['pointIndex']] # retrieve code using point index
         new_pca_df = modeling_wrapper(new_code, df_scaled)
-        new_fig, new_title, new_description = map_display(new_pca_df, new_code)
+        new_pca_df = avoid_text_overlap(new_pca_df, plot_height, vertical_text_padding = 1.05)
+        new_fig, new_title, new_description = map_display(new_pca_df, new_code, plot_height = 700)
         return new_pca_df.to_json(), new_fig, new_title, new_description
     
     # To Do List
