@@ -91,6 +91,16 @@ def avoid_text_overlap(pca_df, plot_height, vertical_text_padding = 1.05):
     # apply clustering using a DBSCAN like algorithm.
     # note we cannot use BDSCAN here is we need to find clusters by looking at both x and y distance, DBSCAN ony searches via a singe euclidian distance
 
+    # psuedo code:
+    # initialize every point as it's own cluster
+    # for each point, check if text will overlap with any other point on plot
+    # if yes, assign them to the same cluster (add in somethign here to deal with combingin clusters)
+    # keep checking until clusters do not change
+    # once clusters are assigned, spread out points vertically to allow some text separation
+    # check we have not moved any points on the upper or lower edges of custers to outside plot boundary
+    # if yes, move all points in cluster away from plot boundary by same amount (keep relative distances the same)
+
+
     return pca_df
 
 # GENERATE SCATTER PLOT
